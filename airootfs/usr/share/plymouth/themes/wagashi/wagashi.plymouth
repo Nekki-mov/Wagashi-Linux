@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Wagashi
+Description=Wagashi Linux boot theme
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/wagashi
+ScriptFile=/usr/share/plymouth/themes/wagashi/wagashi.script

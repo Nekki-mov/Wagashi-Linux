@@ -1,0 +1,37 @@
+# Wagashi Linux GRUB Theme
+# Silence is a design choice.
+
+title-text: ""
+desktop-color: "#000000"
+desktop-image: "background.png"
+
++ image {
+  left = 50%-60
+  top = 20%
+  file = "dango.png"
+}
+
++ label {
+  left = 50%-200
+  top = 42%
+  width = 400
+  height = 30
+  text = "Wagashi Linux"
+  font = "wagashi-22.pf2"
+  color = "#ffffff"
+  align = "center"
+}
+
++ boot_menu {
+  left = 50%-150
+  top = 55%
+  width = 300
+  height = 120
+  item_font = "wagashi-14.pf2"
+  item_color = "#555555"
+  selected_item_color = "#ffffff"
+  item_height = 30
+  item_padding = 0
+  item_spacing = 8
+  scrollbar = false
+}

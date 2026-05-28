@@ -1,0 +1,33 @@
+title-text: ""
+desktop-color: "#000000"
+desktop-image: "background.png"
+
++ image {
+  left = 50%-250
+  top = 12%
+  file = "dango.png"
+}
+
++ label {
+  left = 50%-250
+  top = 47%
+  width = 500
+  align = "center"
+  text = "Wagashi Linux"
+  font = "wagashi-36.pf2"
+  color = "#ffffff"
+}
+
++ boot_menu {
+  left = 50%-180
+  top = 58%
+  width = 360
+  height = 120
+  item_font = "wagashi-20.pf2"
+  item_color = "#555555"
+  selected_item_color = "#ffffff"
+  item_height = 32
+  item_padding = 0
+  item_spacing = 8
+  scrollbar = false
+}

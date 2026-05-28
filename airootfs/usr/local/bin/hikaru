@@ -1,0 +1,309 @@
+#!/usr/bin/env python3
+# Hikaru — Wagashi Linux installer
+# "Light of the sky."
+
+import subprocess, sys, os, getpass, time
+
+def clear():
+    os.system("clear")
+
+def say(msg, pause=0):
+    print(f"\n✦ {msg}")
+    if pause: time.sleep(pause)
+
+def ask(prompt, default=None):
+    suffix = f" [{default}]" if default else ""
+    val = input(f"  {prompt}{suffix} → ").strip()
+    return val if val else default
+
+def ask_choice(prompt, options):
+    print(f"\n✦ {prompt}\n")
+    for i, (key, desc) in enumerate(options.items(), 1):
+        print(f"  {i}.  {desc}")
+    print()
+    while True:
+        choice = input("  Your choice → ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(options):
+            return list(options.keys())[int(choice) - 1]
+        say("Just the number, please.")
+
+def ask_yes(prompt, default="yes"):
+    hint = "[Yes/no]" if default == "yes" else "[yes/No]"
+    val = input(f"\n✦ {prompt} {hint} → ").strip().lower()
+    if not val:
+        return default == "yes"
+    return val in ("yes", "y", "sí", "si", "s")
+
+def run(cmd, check=True, capture=False):
+    if capture:
+        return subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    return subprocess.run(cmd, shell=True, check=check)
+
+def check_network():
+    result = run("ping -c 1 -W 1 1.1.1.1", check=False, capture=True)
+    return result.returncode == 0
+
+def setup_wifi():
+    say("Let's get you connected.")
+    run("iwctl station wlan0 scan && sleep 2 && iwctl station wlan0 get-networks", check=False)
+    ssid = ask("Network name (SSID)")
+    if not ssid:
+        return False
+    password = getpass.getpass(f"  Password for {ssid} → ")
+    run(f'iwctl --passphrase "{password}" station wlan0 connect "{ssid}"', check=False)
+    time.sleep(3)
+    return check_network()
+
+def get_disks():
+    result = run("lsblk -d -o NAME,SIZE,MODEL,TYPE | grep disk", capture=True)
+    disks = []
+    for line in result.stdout.strip().split("\n"):
+        parts = line.split()
+        if parts:
+            disks.append((parts[0], parts[1], " ".join(parts[2:-1]) or "Unknown"))
+    return disks
+
+def main():
+    clear()
+    print("""
+    ✦ Hikaru
+      Light of the sky.
+    """)
+    time.sleep(1)
+
+    say("Welcome. Let's set up your new computer.")
+    say("I'll ask you a few questions. Nothing complicated.", 0.5)
+
+    # Network
+    say("First, let's check your connection.")
+    if check_network():
+        say("You're connected. Good.")
+    else:
+        say("No internet connection found.")
+        has_wifi = run("ip link show wlan0", check=False, capture=True).returncode == 0
+        if has_wifi:
+            if ask_yes("Would you like to connect to a Wi-Fi network?"):
+                if not setup_wifi():
+                    say("Couldn't connect. You can continue, but package download may fail.")
+        else:
+            say("No Wi-Fi detected. Make sure your ethernet cable is plugged in.")
+            say("Continuing anyway.")
+
+    # User
+    say("Now, let's talk about you.")
+    username = ask("What's your username? (lowercase, no spaces)")
+    while not username or not username.replace("-", "").replace("_", "").isalnum() or username[0].isdigit():
+        say("Lowercase only — it's a Linux thing, not us being difficult.")
+        username = ask("Username")
+
+    say(f"Nice. And a password for {username}?")
+    while True:
+        password = getpass.getpass("  Password → ")
+        confirm = getpass.getpass("  Again → ")
+        if password == confirm and password:
+            break
+        say("Those don't match, or the password was empty. Try again.")
+
+    say("What should this computer be called on your network?")
+    hostname = ask("Computer name", default="wagashi")
+
+    # Keyboard
+    layout = ask_choice("What keyboard layout are you using?", {
+        "us":        "US / English (default)",
+        "es":        "Spanish",
+        "uk":        "UK / British",
+        "fr":        "French",
+        "de":        "German",
+        "it":        "Italian",
+        "pt-latin1": "Portuguese",
+        "other":     "Other — I'll configure it manually later",
+    })
+    if layout == "other":
+        layout = ask("Layout code (e.g. dvorak, colemak)", default="us")
+
+    # Timezone
+    continent = ask_choice("Roughly, where are you?", {
+        "Europe":    "Europe",
+        "America":   "Americas",
+        "Asia":      "Asia",
+        "Africa":    "Africa",
+        "Australia": "Australia / Oceania",
+        "UTC":       "I don't know / keep it simple (UTC)",
+    })
+    if continent == "UTC":
+        timezone = "UTC"
+    else:
+        say(f"And the city closest to you in {continent}?")
+        say("Examples: Madrid, London, New_York, Tokyo, Sao_Paulo")
+        city = ask("City", default="London" if continent == "Europe" else "")
+        timezone = f"{continent}/{city}"
+
+    # Disk
+    say("Let's find a home for Wagashi.")
+    disks = get_disks()
+    if not disks:
+        say("No disks found. Something is wrong.")
+        sys.exit(1)
+
+    print("\n✦ Available disks:\n")
+    for i, (name, size, model) in enumerate(disks, 1):
+        print(f"  {i}.  {size}  —  {model}  (/dev/{name})")
+    print()
+
+    while True:
+        choice = input("  Which disk should Wagashi live on? → ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(disks):
+            disk_name = disks[int(choice) - 1][0]
+            disk = f"/dev/{disk_name}"
+            break
+        say("Just the number next to the disk.")
+
+    # Disk layout
+    layout_choice = ask_choice("How would you like to set up the disk?", {
+        "simple":    "Simple — everything together. Easy and works great.",
+        "separated": "Separated — home folder gets its own space. Good if you reinstall often.",
+        "encrypted": "Encrypted — everything locked with a password. Maximum privacy.",
+    })
+
+    # Security
+    enable_firewall = ask_yes("Enable a firewall? Recommended for most people.")
+    enable_auto_updates = ask_yes("Check for updates automatically?")
+
+    # Summary
+    clear()
+    print(f"""
+    ✦ Here's the plan:
+
+      User        {username}
+      Computer    {hostname}
+      Keyboard    {layout}
+      Timezone    {timezone}
+      Disk        {disk}
+      Setup       {layout_choice}
+      Firewall    {"yes" if enable_firewall else "no"}
+      Auto-update {"yes" if enable_auto_updates else "no"}
+    """)
+
+    say("Everything on that disk will be erased and replaced with Wagashi Linux.")
+    if not ask_yes("Ready to go?", default="no"):
+        say("No worries. Come back when you're ready.")
+        sys.exit(0)
+
+    # Installation
+    clear()
+    say("Starting. This will take a few minutes. (this is the slow part)", 0.5)
+
+    is_nvme = "nvme" in disk_name
+    part_efi  = f"{disk}p1" if is_nvme else f"{disk}1"
+    part_root = f"{disk}p2" if is_nvme else f"{disk}2"
+    part_home = f"{disk}p3" if is_nvme else f"{disk}3"
+
+    say("Preparing the disk...")
+    run(f"wipefs -af {disk}")
+    run(f"parted -s {disk} mklabel gpt")
+    run(f"parted -s {disk} mkpart ESP fat32 1MiB 513MiB")
+    run(f"parted -s {disk} set 1 esp on")
+
+    if layout_choice == "separated":
+        run(f"parted -s {disk} mkpart root ext4 513MiB 60%")
+        run(f"parted -s {disk} mkpart home ext4 60% 100%")
+        run(f"mkfs.ext4 -F {part_home}")
+    elif layout_choice == "encrypted":
+        run(f"parted -s {disk} mkpart root ext4 513MiB 100%")
+        say("Setting up encryption. You'll type your disk password now.")
+        run(f"cryptsetup luksFormat {part_root}")
+        run(f"cryptsetup open {part_root} wagashi_crypt")
+        part_root = "/dev/mapper/wagashi_crypt"
+    else:
+        run(f"parted -s {disk} mkpart root ext4 513MiB 100%")
+
+    say("Formatting...")
+    run(f"mkfs.fat -F32 {part_efi}")
+    run(f"mkfs.ext4 -F {part_root}")
+
+    say("Mounting...")
+    run(f"mount {part_root} /mnt")
+    run(f"mount --mkdir {part_efi} /mnt/boot/efi")
+    if layout_choice == "separated":
+        run(f"mount --mkdir {part_home} /mnt/home")
+
+    say("Installing Wagashi Linux...")
+    run("pacstrap /mnt base linux-zen linux-firmware sudo networkmanager grub efibootmgr zsh nano")
+
+    say("Configuring your system...")
+    run("genfstab -U /mnt >> /mnt/etc/fstab")
+    run(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
+    run("arch-chroot /mnt hwclock --systohc")
+    run(f"echo '{hostname}' > /mnt/etc/hostname")
+    run("echo 'en_US.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
+    run("arch-chroot /mnt locale-gen")
+    run("echo 'LANG=en_US.UTF-8' > /mnt/etc/locale.conf")
+
+    if layout != "us":
+        run(f"echo 'KEYMAP={layout}' > /mnt/etc/vconsole.conf")
+
+    say("Creating your user...")
+    run(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
+    run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
+    run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
+
+    say("Installing bootloader...")
+    run("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
+    run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
+
+    say("Applying Wagashi branding...")
+    with open("/mnt/etc/os-release", "w") as f:
+        f.write('NAME="Wagashi Linux"\n')
+        f.write('PRETTY_NAME="Wagashi Linux"\n')
+        f.write('ID=wagashi\n')
+        f.write('ID_LIKE=arch\n')
+        f.write('BUILD_ID=rolling\n')
+        f.write('ANSI_COLOR="1;35"\n')
+        f.write('HOME_URL="https://wagashi.rednek.org"\n')
+        f.write('LOGO=wagashi\n')
+
+    with open("/mnt/etc/motd", "w") as f:
+        f.write('Welcome to Wagashi Linux.\n')
+        f.write('Your computer, always yours.\n')
+
+    say("Verifying installation...")
+    result = run("arch-chroot /mnt ls /boot/vmlinuz-linux-zen", check=False, capture=True)
+    if result.returncode != 0:
+        say("Something went wrong with the kernel. The installation may not boot.")
+        say("You can try again or check the logs.")
+    else:
+        say("Everything looks good.")
+
+    vm_check = run("systemd-detect-virt", check=False, capture=True)
+    if vm_check.stdout.strip() not in ("none", ""):
+        say(f"Looks like you're in a virtual machine ({vm_check.stdout.strip()}). That's fine, just so you know.")
+
+    say("Enabling services...")
+    run("arch-chroot /mnt systemctl enable NetworkManager")
+    if enable_firewall:
+        run("pacstrap /mnt ufw", check=False)
+        run("arch-chroot /mnt systemctl enable ufw", check=False)
+        run("arch-chroot /mnt ufw enable", check=False)
+
+    say("Almost there...", 1)
+    time.sleep(2)
+    clear()
+
+    print(f"""
+    ✦ Done.
+
+      Wagashi Linux is ready.
+      Welcome home, {username}.
+
+      Your computer, always yours.
+
+      ✦ You can reboot now.
+        Type: reboot
+    """)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\n✦ Interrupted. Nothing was changed.")
+        sys.exit(0)

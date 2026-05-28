@@ -1,0 +1,11 @@
+NAME="Wagashi Linux"
+PRETTY_NAME="Wagashi Linux"
+ID=wagashi
+ID_LIKE=arch
+BUILD_ID=rolling
+ANSI_COLOR="1;35"
+HOME_URL="https://wagashi.rednek.org"
+DOCUMENTATION_URL="https://wagashi.rednek.org/docs"
+SUPPORT_URL="https://wagashi.rednek.org/support"
+BUG_REPORT_URL="https://wagashi.rednek.org/bugs"
+LOGO=wagashi
