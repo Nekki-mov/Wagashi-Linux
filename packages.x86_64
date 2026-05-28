@@ -25,3 +25,7 @@ zsh
 plymouth
 grub
 systemd
+plasma
+sddm
+python-pyqt6
+konsole
