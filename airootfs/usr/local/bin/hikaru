@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Hikaru — Wagashi Linux installer
+# Hikaru — Wagashi Linux installer (WindowMaker Edition)
 # "Light of the sky."
 
-import subprocess, sys, os, getpass, time
+import subprocess, sys, os, getpass, time, re as _re
 
 def clear():
     os.system("clear")
@@ -62,6 +62,114 @@ def get_disks():
         if parts:
             disks.append((parts[0], parts[1], " ".join(parts[2:-1]) or "Unknown"))
     return disks
+
+def purpose_packages(purpose):
+    pkgs = []
+    if purpose in ("everyday", "everything"):
+        pkgs += ["firefox", "vlc"]
+    if purpose in ("creative", "gaming_creative", "everything"):
+        pkgs += ["gimp", "inkscape"]
+    if purpose in ("dev", "everything"):
+        pkgs += ["git", "python", "nodejs", "npm"]
+    if purpose in ("gaming", "gaming_creative", "everything"):
+        pkgs += ["steam", "lutris", "wine", "winetricks", "gamemode"]
+    return " ".join(pkgs)
+
+def _detect_cpu_vendor():
+    result = run("grep -m1 'vendor_id' /proc/cpuinfo", capture=True)
+    return "amd" if "AuthenticAMD" in result.stdout else "intel"
+
+def _get_gpus():
+    result = run("lspci -nn | grep -E 'VGA|3D|Display'", capture=True)
+    gpus = []
+    for line in result.stdout.strip().split("\n"):
+        if not line:
+            continue
+        pci_addr = line.split()[0]
+        vendor = "nvidia" if "NVIDIA" in line.upper() else "amd" if ("AMD" in line.upper() or "ATI" in line.upper()) else "other"
+        match = _re.search(r'\[([0-9a-f]{4}:[0-9a-f]{4})\]', line)
+        device_id = match.group(1) if match else "unknown"
+        gpus.append((pci_addr, vendor, device_id, line.strip()))
+    return gpus
+
+def _resolve_gpu(gpu_choice):
+    gpus = _get_gpus()
+    if not gpus or gpu_choice == "none":
+        return None
+    if gpu_choice in ("nvidia", "amd"):
+        candidates = [(a, v, d, l) for a, v, d, l in gpus if v == gpu_choice]
+        if not candidates:
+            say(f"No {gpu_choice.upper()} GPU found. Skipping passthrough.")
+            return None
+        if len(candidates) == 1:
+            return candidates[0][0], candidates[0][1], candidates[0][2]
+        print("\n✦ More than one GPU found. Which one for passthrough?\n")
+        for i, (_, _, _, l) in enumerate(candidates, 1):
+            print(f"  {i}.  {l}")
+        while True:
+            c = input("\n  Your choice → ").strip()
+            if c.isdigit() and 1 <= int(c) <= len(candidates):
+                idx = int(c) - 1
+                return candidates[idx][0], candidates[idx][1], candidates[idx][2]
+    if gpu_choice == "auto":
+        if len(gpus) == 1:
+            say("Only one GPU found. You'll need a second one for passthrough. (This one has plans.)")
+            return None
+        print("\n✦ Which GPU should be passed through to VMs?\n")
+        for i, (_, _, _, l) in enumerate(gpus, 1):
+            print(f"  {i}.  {l}")
+        while True:
+            c = input("\n  Your choice → ").strip()
+            if c.isdigit() and 1 <= int(c) <= len(gpus):
+                idx = int(c) - 1
+                return gpus[idx][0], gpus[idx][1], gpus[idx][2]
+    return None
+
+def setup_passthrough(gpu_choice):
+    if gpu_choice == "none":
+        return
+    result = _resolve_gpu(gpu_choice)
+    if result is None:
+        return
+    pci_addr, vendor, device_id = result
+    cpu = _detect_cpu_vendor()
+    iommu_param = "amd_iommu=on" if cpu == "amd" else "intel_iommu=on"
+
+    say(f"Enabling IOMMU ({iommu_param})...")
+    with open("/mnt/etc/default/grub", "r") as f:
+        grub = f.read()
+    if iommu_param not in grub:
+        grub = grub.replace(
+            'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"',
+            f'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash {iommu_param} iommu=pt"'
+        )
+        with open("/mnt/etc/default/grub", "w") as f:
+            f.write(grub)
+
+    say("Configuring vfio-pci...")
+    with open("/mnt/etc/modprobe.d/vfio.conf", "w") as f:
+        f.write(f"options vfio-pci ids={device_id}\n")
+        if vendor == "nvidia":
+            f.write("softdep nvidia pre: vfio vfio_pci\n")
+            f.write("softdep nouveau pre: vfio vfio_pci\n")
+
+    with open("/mnt/etc/mkinitcpio.conf", "r") as f:
+        mk = f.read()
+    if "vfio_pci" not in mk:
+        mk = "MODULES=(vfio_pci vfio vfio_iommu_type1)\n" + mk
+        with open("/mnt/etc/mkinitcpio.conf", "w") as f:
+            f.write(mk)
+
+    if vendor == "nvidia":
+        say("Applying NVIDIA vendor-id patch...")
+        with open("/mnt/etc/modprobe.d/nvidia-vfio.conf", "w") as f:
+            f.write("options kvm ignore_msrs=1\n")
+            f.write("options kvm report_ignored_msrs=0\n")
+
+    say("Regenerating GRUB and initramfs for passthrough...")
+    run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
+    run("arch-chroot /mnt mkinitcpio -P")
+    say(f"Ushio — passthrough ready. ({vendor.upper()} @ {pci_addr})")
 
 def main():
     clear()
@@ -138,6 +246,16 @@ def main():
         city = ask("City", default="London" if continent == "Europe" else "")
         timezone = f"{continent}/{city}"
 
+    # Purpose
+    purpose = ask_choice("What's this computer going to be for?", {
+        "everyday":        "Everyday life — browsing, watching things, maybe some work.",
+        "creative":        "Creative work — design, illustration, photo.",
+        "dev":             "Development — code, servers, containers, experiments.",
+        "gaming":          "Gaming — games, compatibility, performance.",
+        "gaming_creative": "Gaming + Creative — both. because why choose.",
+        "everything":      "Everything — just put it all in. I'll sort it out later.",
+    })
+
     # Disk
     say("Let's find a home for Wagashi.")
     disks = get_disks()
@@ -165,9 +283,19 @@ def main():
         "encrypted": "Encrypted — everything locked with a password. Maximum privacy.",
     })
 
+    # Virtualization
+    enable_vm = ask_yes("Set up virtualization (Ushio)? Run other OSes inside Wagashi.", default="no")
+    gpu_passthrough = "none"
+    if enable_vm:
+        gpu_passthrough = ask_choice("GPU passthrough — which GPU will you pass to VMs?", {
+            "nvidia": "My passthrough GPU is NVIDIA",
+            "amd":    "My passthrough GPU is AMD",
+            "auto":   "I don't know — find out for me",
+            "none":   "I don't want GPU passthrough",
+        })
+
     # Security
     enable_firewall = ask_yes("Enable a firewall? Recommended for most people.")
-    enable_auto_updates = ask_yes("Check for updates automatically?")
 
     # Summary
     clear()
@@ -178,10 +306,11 @@ def main():
       Computer    {hostname}
       Keyboard    {layout}
       Timezone    {timezone}
+      Purpose     {purpose}
       Disk        {disk}
       Setup       {layout_choice}
+      Ushio       {"yes" if enable_vm else "no"}
       Firewall    {"yes" if enable_firewall else "no"}
-      Auto-update {"yes" if enable_auto_updates else "no"}
     """)
 
     say("Everything on that disk will be erased and replaced with Wagashi Linux.")
@@ -198,7 +327,7 @@ def main():
     part_root = f"{disk}p2" if is_nvme else f"{disk}2"
     part_home = f"{disk}p3" if is_nvme else f"{disk}3"
 
-    say("Preparing the disk...")
+    say("Making room for Wagashi.")
     run(f"wipefs -af {disk}")
     run(f"parted -s {disk} mklabel gpt")
     run(f"parted -s {disk} mkpart ESP fat32 1MiB 513MiB")
@@ -210,27 +339,36 @@ def main():
         run(f"mkfs.ext4 -F {part_home}")
     elif layout_choice == "encrypted":
         run(f"parted -s {disk} mkpart root ext4 513MiB 100%")
-        say("Setting up encryption. You'll type your disk password now.")
+        say("Locking the door. You'll have the only key.")
         run(f"cryptsetup luksFormat {part_root}")
         run(f"cryptsetup open {part_root} wagashi_crypt")
         part_root = "/dev/mapper/wagashi_crypt"
     else:
         run(f"parted -s {disk} mkpart root ext4 513MiB 100%")
 
-    say("Formatting...")
+    say("Clearing the space. A blank page.")
     run(f"mkfs.fat -F32 {part_efi}")
     run(f"mkfs.ext4 -F {part_root}")
 
-    say("Mounting...")
+    say("Getting things in order.")
     run(f"mount {part_root} /mnt")
     run(f"mount --mkdir {part_efi} /mnt/boot/efi")
     if layout_choice == "separated":
         run(f"mount --mkdir {part_home} /mnt/home")
 
-    say("Installing Wagashi Linux...")
-    run("pacstrap /mnt base linux-zen linux-firmware sudo networkmanager grub efibootmgr zsh nano git curl wget htop unzip tar man-db pipewire pipewire-pulse wireplumber bluez bluez-utils cups mesa noto-fonts noto-fonts-emoji ttf-liberation")
+    say("Installing Wagashi Linux. This is the slow part — go get a coffee.")
+    base_pkgs = (
+        "base linux-zen linux-firmware sudo networkmanager grub efibootmgr "
+        "zsh nano git curl wget htop unzip tar man-db "
+        "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
+        "mesa noto-fonts noto-fonts-emoji ttf-liberation "
+        "windowmaker xorg-server xorg-xinit xorg-xrandr xterm "
+        "lightdm lightdm-gtk-greeter plymouth"
+    )
+    extra_pkgs = purpose_packages(purpose)
+    run(f"pacstrap /mnt {base_pkgs} {extra_pkgs}".strip())
 
-    say("Configuring your system...")
+    say("Teaching the system where it is.")
     run("genfstab -U /mnt >> /mnt/etc/fstab")
     run(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
     run("arch-chroot /mnt hwclock --systohc")
@@ -238,27 +376,89 @@ def main():
     run("echo 'en_US.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
     run("arch-chroot /mnt locale-gen")
     run("echo 'LANG=en_US.UTF-8' > /mnt/etc/locale.conf")
-
     if layout != "us":
         run(f"echo 'KEYMAP={layout}' > /mnt/etc/vconsole.conf")
 
-    say("Creating your user...")
+    say("Setting a place for you.")
     run(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
-    say("Installing bootloader...")
+    # .xinitrc para el usuario
+    with open(f"/mnt/home/{username}/.xinitrc", "w") as f:
+        f.write("#!/bin/sh\nexec wmaker\n")
+    run(f"chmod +x /mnt/home/{username}/.xinitrc")
+    run(f"arch-chroot /mnt chown {username}:{username} /home/{username}/.xinitrc")
+
+    say("Telling the computer how to wake up.")
     run("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
+    run("mkdir -p /mnt/boot/grub/themes/wagashi")
+    run("cp /usr/share/grub/themes/wagashi/*.pf2 /mnt/boot/grub/themes/wagashi/")
+
+    with open("/mnt/etc/default/grub", "w") as f:
+        f.write(
+            'GRUB_DEFAULT=0\n'
+            'GRUB_TIMEOUT=5\n'
+            'GRUB_DISTRIBUTOR=""\n'
+            'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\n'
+            'GRUB_CMDLINE_LINUX=""\n'
+            'GRUB_THEME="/boot/grub/themes/wagashi/theme.txt"\n'
+            'GRUB_GFXMODE="auto"\n'
+            'GRUB_GFXPAYLOAD_LINUX=keep\n'
+        )
+
     run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
 
-    say("Installing dango...")
-    run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
-    run("chmod +x /mnt/usr/local/bin/dango")
+    theme = """# Wagashi Linux GRUB Theme
+# Silence is a design choice.
 
-    say("Applying Wagashi branding...")
+title-text: ""
+desktop-color: "#000000"
+
++ label {
+  left = 50%-300
+  top = 38%
+  width = 600
+  height = 40
+  text = "Wagashi Linux"
+  font = "wagashi-36.pf2"
+  color = "#ffffff"
+  align = "center"
+}
+
++ label {
+  left = 50%-300
+  top = 46%
+  width = 600
+  height = 20
+  text = "your computer, always yours."
+  font = "wagashi-14.pf2"
+  color = "#333333"
+  align = "center"
+}
+
++ boot_menu {
+  left = 50%-160
+  top = 56%
+  width = 320
+  height = 140
+  item_font = "wagashi-14.pf2"
+  item_color = "#444444"
+  selected_item_color = "#e8a0a0"
+  selected_item_style = "bold"
+  item_height = 32
+  item_padding = 0
+  item_spacing = 4
+  scrollbar = false
+}
+"""
+    with open("/mnt/boot/grub/themes/wagashi/theme.txt", "w") as f:
+        f.write(theme)
+
+    say("Making it ours.")
     with open("/mnt/etc/os-release", "w") as f:
         f.write('NAME="Wagashi Linux"\n')
-        f.write('PRETTY_NAME="Wagashi Linux"\n')
+        f.write('PRETTY_NAME="Wagashi Linux (WindowMaker Edition)"\n')
         f.write('ID=wagashi\n')
         f.write('ID_LIKE=arch\n')
         f.write('BUILD_ID=rolling\n')
@@ -270,26 +470,38 @@ def main():
         f.write('Welcome to Wagashi Linux.\n')
         f.write('Your computer, always yours.\n')
 
-    say("Verifying installation...")
-    result = run("arch-chroot /mnt ls /boot/vmlinuz-linux-zen", check=False, capture=True)
-    if result.returncode != 0:
-        say("Something went wrong with the kernel. The installation may not boot.")
-        say("You can try again or check the logs.")
-    else:
-        say("Everything looks good.")
+    say("Dressing the boot screen.")
+    run("mkdir -p /mnt/usr/share/plymouth/themes/wagashi")
+    run("cp -r /usr/share/plymouth/themes/wagashi/. /mnt/usr/share/plymouth/themes/wagashi/")
+    with open("/mnt/etc/mkinitcpio.conf", "w") as f:
+        f.write('HOOKS=(base udev plymouth autodetect microcode modconf kms block filesystems keyboard fsck)\n')
+    run("arch-chroot /mnt plymouth-set-default-theme wagashi")
 
-    vm_check = run("systemd-detect-virt", check=False, capture=True)
-    if vm_check.stdout.strip() not in ("none", ""):
-        say(f"Looks like you're in a virtual machine ({vm_check.stdout.strip()}). That's fine, just so you know.")
+    say("Packing everything for the first boot.")
+    run("arch-chroot /mnt mkinitcpio -P")
 
-    say("Enabling services...")
+    say("Installing dango. The package manager, not the snack.")
+    run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
+    run("chmod +x /mnt/usr/local/bin/dango")
+
+    say("Starting the things that should always be running.")
     run("arch-chroot /mnt systemctl enable NetworkManager")
+    run("arch-chroot /mnt systemctl enable lightdm")
+    run("arch-chroot /mnt systemctl enable bluetooth")
+    run("arch-chroot /mnt systemctl enable cups")
+
     if enable_firewall:
+        say("Closing the windows. The unnecessary ones.")
         run("pacstrap /mnt ufw", check=False)
         run("arch-chroot /mnt systemctl enable ufw", check=False)
-        run("arch-chroot /mnt ufw enable", check=False)
-        run("arch-chroot /mnt systemctl enable bluetooth")
-        run("arch-chroot /mnt systemctl enable cups")
+        run("arch-chroot /mnt ufw --force enable", check=False)
+
+    if enable_vm:
+        say("Preparing Ushio. Worlds within worlds.")
+        run("pacstrap /mnt qemu-full libvirt virt-manager dnsmasq")
+        run("arch-chroot /mnt systemctl enable libvirtd")
+        run(f"arch-chroot /mnt usermod -aG libvirt {username}")
+        setup_passthrough(gpu_passthrough)
 
     say("Almost there...", 1)
     time.sleep(2)

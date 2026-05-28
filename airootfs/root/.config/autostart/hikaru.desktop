@@ -1,0 +1,4 @@
+[Desktop Entry]
+Type=Application
+Name=Hikaru
+Exec=xterm -fa 'Noto Sans Mono' -fs 12 -e hikaru

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
 
-iso_name="Wagashi"
+iso_name="Wagashi-Nostalgia"
 iso_label="ARCH_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
 iso_publisher="Nekki.mov <https://wagashi.rednek.org>"
-iso_application="Wagashi Linux"
+iso_application="Wagashi Linux - Nostalgia Edition"
 iso_version="$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y.%m.%d)"
 install_dir="wagashi"
 buildmodes=('iso')
@@ -23,4 +23,6 @@ file_permissions=(
   ["/usr/local/bin/livecd-sound"]="0:0:755"
   ["/usr/local/bin/hikaru"]="0:0:755"
   ["/usr/local/bin/dango"]="0:0:755"
+  ["/root/.xinitrc"]="0:0:755"
+  ["/usr/local/bin/WPrefs"]="0:0:755"
 )
