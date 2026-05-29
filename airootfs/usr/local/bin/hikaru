@@ -167,6 +167,7 @@ def setup_passthrough(gpu_choice):
             f.write("options kvm report_ignored_msrs=0\n")
 
     say("Regenerating GRUB and initramfs for passthrough...")
+    run("sync")
     run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
     run("arch-chroot /mnt mkinitcpio -P")
     say(f"Ushio — passthrough ready. ({vendor.upper()} @ {pci_addr})")
@@ -359,11 +360,11 @@ def main():
     say("Installing Wagashi Linux. This is the slow part — go get a coffee.")
     base_pkgs = (
         "base linux-zen linux-firmware sudo networkmanager grub efibootmgr "
-        "zsh nano git curl wget htop unzip tar man-db "
+        "zsh nano git curl wget htop unzip tar man-db openssh "
         "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
         "mesa noto-fonts noto-fonts-emoji ttf-liberation "
         "windowmaker xorg-server xorg-xinit xorg-xrandr xterm "
-        "lightdm lightdm-gtk-greeter plymouth"
+        "lightdm lightdm-gtk-greeter accountsservice plymouth"
     )
     extra_pkgs = purpose_packages(purpose)
     run(f"pacstrap /mnt {base_pkgs} {extra_pkgs}".strip())
@@ -384,11 +385,31 @@ def main():
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
-    # .xinitrc para el usuario
+    # .xinitrc — WindowMaker
     with open(f"/mnt/home/{username}/.xinitrc", "w") as f:
         f.write("#!/bin/sh\nexec wmaker\n")
     run(f"chmod +x /mnt/home/{username}/.xinitrc")
     run(f"arch-chroot /mnt chown {username}:{username} /home/{username}/.xinitrc")
+
+    # LightDM con session-wrapper
+    run("mkdir -p /mnt/etc/lightdm")
+    with open("/mnt/etc/lightdm/Xsession", "w") as f:
+        f.write("#!/bin/sh\n")
+        f.write("# Inicializar WindowMaker si es la primera vez\n")
+        f.write("if [ ! -d \"$HOME/GNUstep\" ]; then\n")
+        f.write("    wmaker.inst --nodock\n")
+        f.write("fi\n")
+        f.write("exec wmaker\n")
+    run("chmod +x /mnt/etc/lightdm/Xsession")
+
+    with open("/mnt/etc/lightdm/lightdm.conf", "w") as f:
+        f.write(
+            '[LightDM]\n'
+            'allow-guest=false\n'
+            '[Seat:*]\n'
+            'greeter-session=lightdm-gtk-greeter\n'
+            'session-wrapper=/etc/lightdm/Xsession\n'
+        )
 
     say("Telling the computer how to wake up.")
     run("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
@@ -407,8 +428,7 @@ def main():
             'GRUB_GFXPAYLOAD_LINUX=keep\n'
         )
 
-    run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
-
+    # theme.txt ANTES de grub-mkconfig
     theme = """# Wagashi Linux GRUB Theme
 # Silence is a design choice.
 
@@ -455,6 +475,9 @@ desktop-color: "#000000"
     with open("/mnt/boot/grub/themes/wagashi/theme.txt", "w") as f:
         f.write(theme)
 
+    run("sync")
+    run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
+
     say("Making it ours.")
     with open("/mnt/etc/os-release", "w") as f:
         f.write('NAME="Wagashi Linux"\n')
@@ -487,8 +510,10 @@ desktop-color: "#000000"
     say("Starting the things that should always be running.")
     run("arch-chroot /mnt systemctl enable NetworkManager")
     run("arch-chroot /mnt systemctl enable lightdm")
+    run("arch-chroot /mnt systemctl enable accounts-daemon")
     run("arch-chroot /mnt systemctl enable bluetooth")
     run("arch-chroot /mnt systemctl enable cups")
+    run("arch-chroot /mnt systemctl enable sshd")
 
     if enable_firewall:
         say("Closing the windows. The unnecessary ones.")

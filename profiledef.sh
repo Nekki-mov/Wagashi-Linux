@@ -25,4 +25,6 @@ file_permissions=(
   ["/usr/local/bin/dango"]="0:0:755"
   ["/root/.xinitrc"]="0:0:755"
   ["/usr/local/bin/WPrefs"]="0:0:755"
+  ["/usr/local/bin/hikaru-live"]="0:0:755"
+  ["/root/GNUstep/Defaults/WindowMaker"]="0:0:644"
 )
