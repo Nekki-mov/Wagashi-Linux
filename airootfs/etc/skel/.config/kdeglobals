@@ -2,6 +2,11 @@
 ColorScheme=Wagashi
 Name=Wagashi
 shadeSortColumn=true
+font=Bitstream Vera Sans,10,-1,5,50,0,0,0,0,0
+menuFont=Bitstream Vera Sans,10,-1,5,50,0,0,0,0,0
+smallestReadableFont=Bitstream Vera Sans,8,-1,5,50,0,0,0,0,0
+toolBarFont=Bitstream Vera Sans,9,-1,5,50,0,0,0,0,0
+activeFont=Bitstream Vera Sans,10,-1,5,70,0,0,0,0,0
 
 [Icons]
 Theme=breeze-dark
@@ -10,6 +15,9 @@ Theme=breeze-dark
 LookAndFeelPackage=org.kde.breezedark.desktop
 contrast=4
 widgetStyle=Breeze
+
+[WM]
+activeFont=Bitstream Vera Sans,10,-1,5,70,0,0,0,0,0
 
 [Colors:Button]
 BackgroundNormal=17,17,17
