@@ -51,7 +51,7 @@ Todo el ecosistema está inspirado en Key/Visual Arts. Si no has visto Clannad, 
 |---|---|---|---|
 | `kde` | Wagashi Linux | KDE Plasma 6 Wayland | ✅ FUNCIONAL |
 | `windowmaker` | Wagashi Nostalgia | WindowMaker 0.96.0 | ✅ FUNCIONAL |
-| `monochrome` | Wagashi Monochrome | KDE monocromático | ⏳ PENDIENTE |
+| `monochrome` | Wagashi Monochrome | KDE Plasma 6 Wayland | ✅ PRIMERA VERSIÓN |
 | `lxqt-community` | Wagashi LXQt | LXQt | ⏳ PENDIENTE |
 | `main` | Base común | — | ✅ con Year Zero |
 
@@ -127,7 +127,7 @@ calçot() { echo "Did you know, Hatsune Miku was made by Catalonian people? Yeah
 ### Wallpapers
 - Ruta: `/usr/share/wagashi/wallpapers/`
 - Archivos: `Hikaru_16-9.png`, `Hikaru_16-10.png`, `Hikaru_4-3.png`, `Hikaru.png` (fallback)
-- Arte original de Nekki.mov. Bonito de verdad.
+- Arte original de Nekki.mov.
 
 ### Easter eggs en .zshrc y .bashrc (skel y root)
 ```zsh
@@ -137,17 +137,68 @@ calçot() { echo "Did you know, Hatsune Miku was made by Catalonian people? Yeah
 
 ---
 
+## Estado edición Monochrome (rama `monochrome`) — PRIMERA VERSIÓN FUNCIONAL
+
+### Filosofía
+Negro puro OLED. Grises. Blanco roto. Y coral #e8a0a0 exactamente donde importa — selecciones, foco, lo que merece destacar. Como el paraguas rosa en el wallpaper.
+
+### Wallpaper
+- `Monochrome.png` — chica con paraguas rosa en calle japonesa de noche. Todo monocromático excepto ella.
+- Arte original de Nekki.mov. Bonito de verdad.
+- Ruta: `/usr/share/wagashi/wallpapers/Monochrome.png`
+
+### Color scheme (`Wagashi.colors`)
+- Base: #000000 negro puro
+- Superficies: #111111 / #1a1a1a
+- Texto: #e8e8e8 blanco roto
+- Selección/foco/activo: #e8a0a0 coral
+- Bordes: #2a2a2a gris muy oscuro
+- Ruta: `/usr/share/color-schemes/Wagashi.colors`
+
+### Fuentes
+- **Bitstream Vera Sans** — clásica, con carácter, no genérica
+- Sistema, menús, toolbar, títulos de ventana
+- `ttf-bitstream-vera` en `packages.x86_64`
+
+### Decoraciones de ventana (`kwinrc`)
+- Botones a la **izquierda** — X, maximizar, minimizar (orden macOS)
+- Sin bordes
+- Ventanas maximizadas sin bordes
+
+### Konsole
+- Perfil `Wagashi.profile` con Bitstream Vera Sans Mono
+- Color scheme `Wagashi.colorscheme` — negro puro, coral como color 5
+- Menú y barra de estado desactivados
+- Propagado a skel y root
+
+### SDDM
+- Fondo: `Monochrome.png`
+- Tema: breeze (placeholder hasta ricing)
+
+### wagashi-firstrun
+- Script que se ejecuta en el primer arranque
+- Configura el panel de Plasma (full width, bottom, 44px)
+- Se marca como ejecutado para no repetirse
+
+### Pendiente (ricing)
+- Tema Plasma propio: **Wagashi Monochrome**
+- Reemplazar Breeze Dark por tema propio
+- Iconos monocromáticos
+- Konsole con transparencia opcional
+
+---
+
 ## Cambios importantes del día de hoy (30 de mayo de 2026)
 
 - ✅ Commit final rama `windowmaker` — Wagashi Nostalgia Edition completa
-- ✅ Limpieza de artifacts de build de WindowMaker del repo (windowmaker/src/, windowmaker/pkg/) — costó varios commits pero aquí estamos, más sabios y con menos pelo
+- ✅ Limpieza de artifacts de build de WindowMaker del repo — costó varios commits pero aquí estamos
 - ✅ `.gitignore` añadido a `windowmaker` y `kde` para que no vuelva a pasar. Nunca más.
-- ✅ Easter eggs añadidos a `main` (skel y root .zshrc)
-- ✅ Easter eggs añadidos a `kde` (skel y root .zshrc)
-- ✅ Easter eggs añadidos a `windowmaker` (skel y root .zshrc y .bashrc) — porque root también merece saber lo del calçot
-- ✅ `sync` antes de `grub-mkconfig` en hikaru KDE CLI — en el flujo principal y en el de Ushio/passthrough
-- ✅ `main` tiene skel con easter eggs
-- ⚠️ `windowmaker/` colado en `main` y `kde` por accidente — limpiado. Git y la vergüenza son buenos maestros.
+- ✅ Easter eggs añadidos a `main`, `kde` y `windowmaker`
+- ✅ `sync` antes de `grub-mkconfig` en hikaru KDE CLI
+- ✅ Year Zero actualizado
+- ✅ Wagashi Monochrome — primera versión funcional
+- ✅ README de Monochrome escrito
+- ⚠️ `windowmaker/` colado en `main` y `kde` por accidente varias veces — limpiado. Git y la vergüenza son buenos maestros.
 
 ---
 
@@ -157,28 +208,29 @@ calçot() { echo "Did you know, Hatsune Miku was made by Catalonian people? Yeah
 2. **GRUB orden**: theme.txt ANTES de grub-mkconfig, `sync` antes de grub-mkconfig. Siempre. Sin excepción.
 3. **wmaker.inst**: Necesario antes del primer arranque de WindowMaker. Nadie lo documenta. Nosotros sí.
 4. **WorkspaceBack DOS ESPACIOS**: `WorkspaceBack =  (solid` — el sed DEBE tener dos espacios. Bug de dos horas. Inmortalizado aquí.
-5. **ufw en chroot**: `ufw --force enable` — sin --force se cuelga esperando a systemd que no existe. Típico.
+5. **ufw en chroot**: `ufw --force enable` — sin --force se cuelga esperando a systemd que no existe.
 6. **systemctl enable**: Separados, no en cadena. La cadena rompe. Siempre rompe cuando más urge.
-7. **Username**: Siempre minúsculas — mayúscula en el username causa `/home/Nekane` vs `/home/nekane` y una tarde de confusión existencial.
+7. **Username**: Siempre minúsculas — mayúscula causa `/home/Nekane` vs `/home/nekane` y una tarde de confusión existencial.
 8. **SSH**: Siempre instalar y habilitar openssh — sin SSH el debug es una pesadilla de proporciones épicas.
-9. **sakura -e**: No acepta comandos compuestos con `;` — usar script wrapper (hikaru-live). Aprendido con dolor.
+9. **sakura -e**: No acepta comandos compuestos con `;` — usar script wrapper (hikaru-live).
 10. **multilib**: Habilitado en pacman.conf de windowmaker para compatibilidad.
-11. **Xauth**: Los warnings de `.Xauthority` en el live son cosméticos, X arranca igualmente. Respira.
+11. **Xauth**: Los warnings de `.Xauthority` en el live son cosméticos. Respira.
 12. **grub-mkfont warnings**: Los warnings de parámetros de fuente son inofensivos. También respira.
 13. **Git y los artifacts**: `git add -A` en un directorio con builds de WindowMaker sin .gitignore es una experiencia formativa. Ahora hay .gitignore. En todas las ramas.
-14. **Punto y coma en zsh functions**: `pierogi() { echo "O KURWA"; }` — el punto y coma antes del `}` es obligatorio en zsh. Sin él, silencio. Silencio desconcertante.
+14. **Punto y coma en zsh functions**: El punto y coma antes del `}` es obligatorio en zsh. Sin él, silencio desconcertante.
+15. **mkarchiso y espacio en disco**: Usar siempre `~/wagashi-work` y `~/wagashi-out` — `/tmp` se queda sin espacio. Aprendido compilando.
 
 ---
 
 ## Pendiente inmediato
 
-- [ ] Propagar `sync` antes de `grub-mkconfig` a hikaru GUI KDE también
-- [ ] Edición **Monochrome** — KDE + tema monocromático (misma base que KDE)
+- [ ] Compilar y bootear Monochrome — primera prueba real
 - [ ] Edición **lxqt-community** — primer commit base
+- [ ] Ricing de todas las ediciones
 
 ## A largo plazo
 
-- [ ] Rice visual de todas las ediciones
+- [ ] Tema Plasma propio: Wagashi Monochrome
 - [ ] Misae — fork de WindowMaker
 - [ ] Menma — fork de Wine
 - [ ] Repo propio de paquetes Wagashi
@@ -201,6 +253,7 @@ calçot() { echo "Did you know, Hatsune Miku was made by Catalonian people? Yeah
 > "Silence is a design choice."
 > "Same soul, different shape."
 > "Two spaces. It's always two spaces."
+> "The only color that matters stands out on its own."
 
 ---
 
