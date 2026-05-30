@@ -1,0 +1,6 @@
+Name: wmlib
+Description: Window Maker interface definitions
+Version: 0.96.0
+Requires: x11
+Libs: -L/usr/lib  -lWMaker
+Cflags: -I/usr/include 

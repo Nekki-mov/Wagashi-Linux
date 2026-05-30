@@ -1,0 +1,6 @@
+Name: wrlib
+Description: Image manipulation and conversion library
+Version: 0.96.0
+Libs: -L/usr/lib  -lwraster
+Libs.private: -lXpm -lpng -ljpeg -lgif -ltiff -lwebp -lMagickWand-7.Q16HDRI -lMagickCore-7.Q16HDRI -lX11  -lXext -lm
+Cflags: -I/usr/include 

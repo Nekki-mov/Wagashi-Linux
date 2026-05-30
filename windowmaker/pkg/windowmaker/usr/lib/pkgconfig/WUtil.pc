@@ -1,0 +1,6 @@
+Name: WUtil
+Description: Utility library for WINGs
+Version: 0.96.0
+Libs: -L/usr/lib -lWUtil
+Libs.private: 
+Cflags: -I/usr/include
