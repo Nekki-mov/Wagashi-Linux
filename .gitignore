@@ -1,0 +1,4 @@
+# Build artifacts del paquete local WindowMaker
+windowmaker/src/
+windowmaker/pkg/
+windowmaker/*.pkg.tar.zst
