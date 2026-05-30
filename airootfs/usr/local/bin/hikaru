@@ -364,6 +364,7 @@ def main():
         "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
         "mesa noto-fonts noto-fonts-emoji ttf-liberation "
         "windowmaker xorg-server xorg-xinit xorg-xrandr xterm "
+        "sakura pcmanfm "
         "lightdm lightdm-gtk-greeter accountsservice plymouth"
     )
     extra_pkgs = purpose_packages(purpose)
@@ -391,15 +392,19 @@ def main():
     run(f"chmod +x /mnt/home/{username}/.xinitrc")
     run(f"arch-chroot /mnt chown {username}:{username} /home/{username}/.xinitrc")
 
+
+
     # LightDM con session-wrapper
     run("mkdir -p /mnt/etc/lightdm")
     with open("/mnt/etc/lightdm/Xsession", "w") as f:
-        f.write("#!/bin/sh\n")
-        f.write("# Inicializar WindowMaker si es la primera vez\n")
-        f.write("if [ ! -d \"$HOME/GNUstep\" ]; then\n")
-        f.write("    wmaker.inst --nodock\n")
-        f.write("fi\n")
-        f.write("exec wmaker\n")
+        f.write(
+            "#!/bin/sh\n"
+            "if [ ! -d \"$HOME/GNUstep\" ]; then\n"
+            "    wmaker.inst --nodock\n"
+            "    sed -i 's|WorkspaceBack =  (solid.*|WorkspaceBack = (cpixmap, \"/usr/share/wagashi/wallpapers/Hikaru_16-9.png\", black);|' \"$HOME/GNUstep/Defaults/WindowMaker\"\n"
+            "fi\n"
+            "exec wmaker\n"
+        )
     run("chmod +x /mnt/etc/lightdm/Xsession")
 
     with open("/mnt/etc/lightdm/lightdm.conf", "w") as f:
@@ -503,6 +508,10 @@ desktop-color: "#000000"
     say("Packing everything for the first boot.")
     run("arch-chroot /mnt mkinitcpio -P")
 
+    say("Installing wallpapers...")
+    run("mkdir -p /mnt/usr/share/wagashi/wallpapers")
+    run("cp /usr/share/wagashi/wallpapers/*.png /mnt/usr/share/wagashi/wallpapers/")
+
     say("Installing dango. The package manager, not the snack.")
     run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
     run("chmod +x /mnt/usr/local/bin/dango")
@@ -527,6 +536,14 @@ desktop-color: "#000000"
         run("arch-chroot /mnt systemctl enable libvirtd")
         run(f"arch-chroot /mnt usermod -aG libvirt {username}")
         setup_passthrough(gpu_passthrough)
+
+    # Easter eggs en el .zshrc del usuario
+    zshrc_path = f"/mnt/home/{username}/.zshrc"
+    with open(zshrc_path, "a") as f:
+        f.write("\n# easter eggs\n")
+        f.write("pierogi() { echo \"O KURWA\"; }\n")
+        f.write("cal\u00e7ot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT\'S NOT A FUCKING LEEK, IT\'S A CAL\u00c7OT, VISCA LA TERRA NOI!\"; }\n")
+    run(f"arch-chroot /mnt chown {username}:{username} /home/{username}/.zshrc")
 
     say("Almost there...", 1)
     time.sleep(2)

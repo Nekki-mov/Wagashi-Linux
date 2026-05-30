@@ -23,7 +23,6 @@ qemu-guest-agent
 sof-firmware
 zsh
 plymouth
-grub
 systemd
 windowmaker
 xorg-server
@@ -32,7 +31,6 @@ xorg-xrandr
 lightdm
 lightdm-gtk-greeter
 xterm
-python-pyqt6
 noto-fonts
 noto-fonts-emoji
 ttf-liberation
@@ -44,3 +42,4 @@ bluez-utils
 cups
 mesa
 sakura
+pcmanfm
