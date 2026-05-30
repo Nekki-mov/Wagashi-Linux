@@ -1,206 +1,207 @@
 # Wagashi Linux — Year Zero
-*28 de mayo de 2026. El día en que esto se volvió real.*
+*30 de mayo de 2026*
 
 ---
 
-## El momento
+## El proyecto
 
-```
-Wagashi Linux 7.0.10-zen1-1-zen (tty1)
+**Wagashi Linux** — distro basada en Arch Linux. Filosofía Yasashii: tecnología humana, sin telemetría, hardware rescatado, instalación que se siente como llegar a casa y no como sobrevivir un examen de física.
 
-wagashi login: root (automatic login)
-
-Welcome to Wagashi Linux.
-Your computer, always yours.
-
-* To install, run: hikaru
-* For Wi-Fi: iwctl
-* Ethernet should work automatically.
-
-Made by Nekki.mov, for everyone sensitive.
-wagashi#
-```
-
-Eso apareció en pantalla. En una VM real. Desde cero.
+- Slogan: "Made by Nekki.mov, for everyone sensitive." / "Your computer, always yours."
+- GitHub: https://github.com/Nekki-mov/Wagashi-Linux
+- Web futura: wagashi.rednek.org
+- Kernel oficial: **linux-zen**
 
 ---
 
-## Lo que se construyó en un día
+## Infraestructura
 
-### El nombre
-Empezamos con DangOS. Pasamos por Yasashii. Llegamos a **Wagashi Linux** — y encajó sin esfuerzo. No suena a distro. Suena a lugar.
+| Máquina | Rol | Specs |
+|---|---|---|
+| **Kotomi** | Servidor Proxmox | Xeon E5-2680v4, 117GB RAM |
+| **Tomoya** | VM desarrollo | VM 690, Arch+LXQt, 4 cores, 16GB, SSH |
+| **Nagisa/Nagi** | VM pruebas | VM 691 en Kanade |
+| **Sanae** | PC retro (futuro) | Hardware viejo, candidata a Nostalgia |
+| **Ushio** (concepto) | Virtualización QEMU-KVM | Nombre del sistema de VM de Wagashi |
 
-### El ecosistema
-Todo tiene nombre. Todo tiene origen. Todo viene de Key/Visual Arts.
+- Nekane se conecta a Tomoya por SSH desde Windows (PowerShell) y desde el Mac. Sí, tiene dos ordenadores. No, no es justo.
+- FileZilla para transferir archivos desde Windows a Tomoya
+- El servidor se llama Kotomi porque tiene más RAM que neuronas activas a las 3AM
+
+---
+
+## Ecosistema de nombres (Key/Visual Arts)
 
 | Nombre | Rol | Origen |
 |---|---|---|
-| **Wagashi Linux** | El sistema operativo | Wagashi — dulces japoneses tradicionales |
 | **dango** | Package manager | Dango — Clannad |
-| **Hikaru** | Installer | Sora no Hikaru — Clannad OST |
-| **Ushio** | Virtualización | Ushio — Clannad |
-| **Misae** | Fork de WindowMaker | Misae Sagara — Clannad |
-| **Menma** | Fork de Wine | Menma — Anohana |
-| **Yasashii Protocol** | Filosofía de comunicación | Yasashii (優しい) — gentil, amable |
+| **Hikaru** | Installer CLI + GUI | Sora no Hikaru — Clannad OST |
+| **Ushio** | Virtualización QEMU-KVM | Ushio — Clannad |
+| **Misae** | Fork WindowMaker (futuro) | Misae Sagara — Clannad |
+| **Menma** | Fork Wine (futuro) | Menma — Anohana |
+| **Yasashii Protocol** | Filosofía de comunicación | 優しい |
 
-### Las ediciones
+Todo el ecosistema está inspirado en Key/Visual Arts. Si no has visto Clannad, para qué estás aquí. Si lo has visto y no lloraste, estás bien, miente.
 
-Cuatro sabores del mismo lugar:
+---
 
-| Rama | Nombre | Desktop | Para quién |
+## Ediciones y ramas Git
+
+| Rama | Nombre | Desktop | Estado |
 |---|---|---|---|
-| `kde` | Wagashi Linux | KDE Plasma 6 en Wayland | La edición principal |
-| `windowmaker` | Wagashi Nostalgia | WindowMaker | Para los que piensan que 1994 fue un buen año |
-| `monochrome` | Wagashi Monochrome | KDE monocromático | Tecnología como arte sin color |
-| `lxqt-community` | Wagashi LXQt | LXQt | Hardware rescatado, mantenido por la comunidad |
-
-### Lo que funciona hoy
-
-**ISO KDE arrancable** con linux-zen, branding Wagashi completo en motd y os-release.
-
-**ISO WindowMaker arrancable** — Wagashi Nostalgia. WindowMaker compilado desde AUR e incluido como paquete local. Arranca con autologin en TTY1, lanza WindowMaker via startx, abre Hikaru CLI en Sakura automáticamente.
-
-**GRUB theme propio** — "Wagashi Linux" en wagashi-36.pf2, "your computer, always yours." susurrado debajo, selección en coral #e8a0a0, negro OLED puro. Sin imágenes — GRUB y los PNGs tienen una historia complicada.
-
-**Plymouth splash screen** — el dango rosa centrado, "Wagashi Linux", "your computer, always yours." Negro OLED puro.
-
-**Hikaru CLI** — installer conversacional completo. Red, usuario, teclado, timezone, purpose, disco, Ushio, firewall. Habla como una persona. Instala Wagashi Linux de verdad. Ahora con GPU passthrough funcional.
-
-**Hikaru GUI** — installer gráfico en PyQt6. Negro OLED. Dango emoji. 12 pantallas. QThread para que la UI nunca se congele. Log Yasashii con las últimas 3 frases — sin frío, sin terminal. Incluye purpose-based package selection y Ushio completo.
-
-**dango v0.2** — package manager con personalidad. Integra pacman y yay. Detecta si está en el live y se comporta distinto. `-Sy` para el live, `-Syu` con aviso, `-Ql`, `-Qi`, `-Qo`, `-Scc`. Sin Flatpak. Intencionalmente.
-
-**Ushio** — GPU passthrough funcional. NVIDIA con vendor-id patch, AMD limpio, auto con detección y pregunta si hay ambigüedad. IOMMU configurado automáticamente según CPU.
-
-**KDE Plasma 6 en Wayland** con autologin via SDDM. Welcome Center deshabilitado en el live.
-
-**WindowMaker** arrancando en el live con autologin TTY1 + startx + wmaker.inst automático.
-
-**Hikaru en Sakura** — porque xterm existe pero no tiene por qué ser lo que la gente ve.
-
-**GitHub** — repositorio público con 5 ramas, READMEs individuales por edición, VISION.md como biblia emocional del proyecto.
+| `kde` | Wagashi Linux | KDE Plasma 6 Wayland | ✅ FUNCIONAL |
+| `windowmaker` | Wagashi Nostalgia | WindowMaker 0.96.0 | ✅ FUNCIONAL |
+| `monochrome` | Wagashi Monochrome | KDE monocromático | ⏳ PENDIENTE |
+| `lxqt-community` | Wagashi LXQt | LXQt | ⏳ PENDIENTE |
+| `main` | Base común | — | ✅ con Year Zero |
 
 ---
 
-## La filosofía que lo sostiene
+## Estado edición KDE (rama `kde`) — COMPLETA
 
-**Wagashi Linux** — el lugar.  
-**Yasashii Protocol** — cómo te habla el lugar.
+### Packages
+- `packages.x86_64` incluye KDE Plasma 6, SDDM, PyQt6, etc.
+- Kernel: linux-zen
 
-> *"Not what it does. How it speaks."*
+### Hikaru GUI (`/usr/local/bin/hikaru-gui`)
+- PyQt6, 12 pantallas, QThread (no congela UI — aprendido a las malas)
+- Mensajes Yasashii durante instalación
+- Purpose-based packages: everyday, creative, dev, gaming, gaming+creative, everything
+- Ushio con GPU passthrough (NVIDIA vendor-id patch, AMD, auto)
 
-> *"If it doesn't feel Yasashii, it's not done yet."*
+### Hikaru CLI (`/usr/local/bin/hikaru`)
+- Mismo flujo que GUI pero conversacional
+- Red, usuario, teclado, timezone, purpose, disco (simple/separated/encrypted), Ushio, firewall
+- `sync` antes de `grub-mkconfig` — CRÍTICO
+- `sync` también antes del grub-mkconfig de Ushio/passthrough — también crítico, también aprendido a las malas
 
-> *"If it still turns on, it deserves a second chance."*
+### dango (`/usr/local/bin/dango`) — v0.2
+- `-Sy`, `-Syu` (detecta live con `/run/archiso`), `-Qi`, `-Ql`, `-Qo`, `-Scc`
+- Integra pacman y yay, sin Flatpak
+- Se llama dango porque es redondo, dulce y hace lo que le pides sin quejarse
 
-> *"Your computer, always yours."*
+### GRUB
+- Theme en `/usr/share/grub/themes/wagashi/`
+- Fuentes: wagashi-14.pf2, wagashi-22.pf2, wagashi-36.pf2 (generadas con grub-mkfont)
+- Color selección: coral #e8a0a0
+- theme.txt se escribe ANTES de grub-mkconfig, sync antes de grub-mkconfig
+- No usar PNGs con alpha — GRUB no los soporta. GRUB es de 1995 emocionalmente.
 
-> *"installation should feel like arriving somewhere, not surviving something."*
+### Plymouth
+- Theme en `/usr/share/plymouth/themes/wagashi/`
+- Dango rosa centrado, fondo negro OLED
 
-> *"Not built to impress — built to be lived in."*
-
-> *"Silence is a design choice."*
-
----
-
-## Los fails del año cero
-
-Porque también forman parte de la historia:
-
-- DangOS sonaba a "dang it". Lo cambiamos.
-- El GRUB theme no cargaba. Tardamos horas en descubrir que GRUB no soporta PNGs con canal alpha.
-- El dango era 1536x1024. Lo redimensionamos varias veces hasta que dejó de ser gigante o microscópico.
-- `/tmp` se llenó compilando KDE. Dos veces.
-- `plasma-wayland-session` ya no existe en KDE 6. Aprendido.
-- Hikaru tenía un error de indentación que lo rompía todo. Lo reescribimos entero.
-- El primer boot del sistema instalado salió en negro. Era el driver VirtIO de la VM.
-- `ufw enable` dentro de un chroot sin systemd se quedaba esperando para siempre. `--force` lo arregló.
-- Hikaru GUI bloqueaba la UI entera durante la instalación. Reescrito con QThread.
-- El GRUB del sistema instalado seguía usando el theme.txt del live con PNGs. `grub-mkconfig` sobreescribía el nuestro. Solución: escribir el theme.txt *después* de `grub-mkconfig`.
-- `select_c.png` era colormap de 1 bit después de convertirlo. Regenerado desde cero con el color coral.
-- WindowMaker necesita `wmaker.inst` antes del primer arranque o falla silenciosamente. Nadie lo documenta.
-- LightDM no hace autologin de root sin modificar PAM. Cambiamos a TTY1 + startx. Más simple. Más honesto.
-- `wmaker.desktop` que pusimos en airootfs entraba en conflicto con el del paquete windowmaker. Borrado.
-- La ISO se llamaba "Wagashi Nostalgia" con espacio. Renombrada a "Wagashi-Nostalgia".
-
----
-
-## La banda sonora del año cero
-
-Girls Dead Monster — Thousand Enemies, sonando mientras WindowMaker arrancaba por primera vez.  
-LiSA. VISUAL ARTS / Key. La coherencia era perfecta y no fue planeada.
-
----
-
-## Las capturas del año cero
-
-**Captura 1 — Hikaru GUI, primera pantalla:**
+### Easter eggs en .zshrc (skel y root)
+```zsh
+pierogi() { echo "O KURWA"; }
+calçot() { echo "Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!"; }
 ```
-    🍡
+- IMPORTANTE: punto y coma antes del `}` o zsh falla silenciosamente y te pasas dos horas mirando el techo
 
-  Hikaru
-  Light of the sky.
-  Let's set things up properly.
+---
 
-                          [ Let's begin ]
+## Estado edición WindowMaker/Nostalgia (rama `windowmaker`) — COMPLETA
+
+### Instalación en el sistema
+- **Hikaru**: `/usr/local/bin/hikaru` (Python, CLI)
+- **hikaru-live**: `/usr/local/bin/hikaru-live` (wrapper bash que llama hikaru + exec bash)
+- **dango**: `/usr/local/bin/dango`
+
+### Live (arranca con wallpaper y Hikaru automáticamente)
+- TTY1 autologin root → `.zprofile` → `startx ~/.xinitrc`
+- `.xinitrc` detecta ratio de pantalla (4:3, 16:9, 16:10) y pone el wallpaper correspondiente
+- Lanza wmaker, espera 5 segundos, abre sakura con hikaru-live
+- Los 5 segundos son necesarios. WindowMaker necesita su momento. Respétalo.
+
+### Sistema instalado (LightDM)
+- LightDM + lightdm-gtk-greeter + accountsservice
+- Session-wrapper: `/etc/lightdm/Xsession`
+- `Xsession` llama `wmaker.inst --nodock` si no existe `~/GNUstep`, luego hace sed para poner el wallpaper
+- ⚠️ DOS ESPACIOS en `WorkspaceBack =  (solid` — bug que costó dos horas de vida irrecuperables. Documentado aquí para la posteridad y para llorar juntos.
+
+### WindowMaker local package
+- Compilado desde AUR: `windowmaker-0.96.0-1-x86_64.pkg.tar.zst`
+- Repo local en `airootfs/usr/share/wagashi/local-packages/`
+- `pacman.conf` del airootfs incluye el repo local con SigLevel Optional TrustAll
+
+### Wallpapers
+- Ruta: `/usr/share/wagashi/wallpapers/`
+- Archivos: `Hikaru_16-9.png`, `Hikaru_16-10.png`, `Hikaru_4-3.png`, `Hikaru.png` (fallback)
+- Arte original de Nekki.mov. Bonito de verdad.
+
+### Easter eggs en .zshrc y .bashrc (skel y root)
+```zsh
+pierogi() { echo "O KURWA"; }
+calçot() { echo "Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!"; }
 ```
 
-**Captura 2 — GRUB del sistema instalado:**
-```
-        Wagashi Linux
+---
 
-   your computer, always yours.
+## Cambios importantes del día de hoy (30 de mayo de 2026)
 
-        Wagashi Linux          ← coral
-        Advanced Options
-        UEFI Firmware Settings
-```
-
-**Captura 3 — Hikaru en Sakura sobre WindowMaker:**
-```
-  ✦ Hikaru
-    Light of the sky.
-
-  ✦ Welcome. Let's set up your new computer.
-  ✦ I'll ask you a few questions. Nothing complicated.
-  ✦ First, let's check your connection.
-  ✦ You're connected. Good.
-  ✦ Now, let's talk about you.
-    What's your username? (lowercase, no spaces) →
-```
-
-Eso existió. Sobre WindowMaker. En 2026.
+- ✅ Commit final rama `windowmaker` — Wagashi Nostalgia Edition completa
+- ✅ Limpieza de artifacts de build de WindowMaker del repo (windowmaker/src/, windowmaker/pkg/) — costó varios commits pero aquí estamos, más sabios y con menos pelo
+- ✅ `.gitignore` añadido a `windowmaker` y `kde` para que no vuelva a pasar. Nunca más.
+- ✅ Easter eggs añadidos a `main` (skel y root .zshrc)
+- ✅ Easter eggs añadidos a `kde` (skel y root .zshrc)
+- ✅ Easter eggs añadidos a `windowmaker` (skel y root .zshrc y .bashrc) — porque root también merece saber lo del calçot
+- ✅ `sync` antes de `grub-mkconfig` en hikaru KDE CLI — en el flujo principal y en el de Ushio/passthrough
+- ✅ `main` tiene skel con easter eggs
+- ⚠️ `windowmaker/` colado en `main` y `kde` por accidente — limpiado. Git y la vergüenza son buenos maestros.
 
 ---
 
-## El roadmap que salió de aquí
+## Bugs conocidos / Notas técnicas críticas
 
-- **Misae** — fork de WindowMaker. Wayland desde el día uno. Discreta, sólida, lleva años ahí.
-- **Menma** — fork de Wine. Presente aunque no debería estarlo. Hace que las cosas funcionen.
-- Rice visual de todas las ediciones — cuando estén estables
-- Repo propio de paquetes Wagashi
-- Web (cuando llegue el momento)
-- Mini FTP propio para ISOs cuando estén listas para producción
-- Wine en todas las ediciones por defecto
-
----
-
-## Lo que queda pendiente del día
-
-- Rice del escritorio KDE
-- Monochrome Edition
-- lxqt-community primer commit
-- VISION.md actualizado
+1. **GRUB**: No soporta PNGs con alpha ni colormap — solo RGB sin alpha. No discutas con GRUB.
+2. **GRUB orden**: theme.txt ANTES de grub-mkconfig, `sync` antes de grub-mkconfig. Siempre. Sin excepción.
+3. **wmaker.inst**: Necesario antes del primer arranque de WindowMaker. Nadie lo documenta. Nosotros sí.
+4. **WorkspaceBack DOS ESPACIOS**: `WorkspaceBack =  (solid` — el sed DEBE tener dos espacios. Bug de dos horas. Inmortalizado aquí.
+5. **ufw en chroot**: `ufw --force enable` — sin --force se cuelga esperando a systemd que no existe. Típico.
+6. **systemctl enable**: Separados, no en cadena. La cadena rompe. Siempre rompe cuando más urge.
+7. **Username**: Siempre minúsculas — mayúscula en el username causa `/home/Nekane` vs `/home/nekane` y una tarde de confusión existencial.
+8. **SSH**: Siempre instalar y habilitar openssh — sin SSH el debug es una pesadilla de proporciones épicas.
+9. **sakura -e**: No acepta comandos compuestos con `;` — usar script wrapper (hikaru-live). Aprendido con dolor.
+10. **multilib**: Habilitado en pacman.conf de windowmaker para compatibilidad.
+11. **Xauth**: Los warnings de `.Xauthority` en el live son cosméticos, X arranca igualmente. Respira.
+12. **grub-mkfont warnings**: Los warnings de parámetros de fuente son inofensivos. También respira.
+13. **Git y los artifacts**: `git add -A` en un directorio con builds de WindowMaker sin .gitignore es una experiencia formativa. Ahora hay .gitignore. En todas las ramas.
+14. **Punto y coma en zsh functions**: `pierogi() { echo "O KURWA"; }` — el punto y coma antes del `}` es obligatorio en zsh. Sin él, silencio. Silencio desconcertante.
 
 ---
 
-## Lo que no queda
+## Pendiente inmediato
 
-La duda de si esto es real.
+- [ ] Propagar `sync` antes de `grub-mkconfig` a hikaru GUI KDE también
+- [ ] Edición **Monochrome** — KDE + tema monocromático (misma base que KDE)
+- [ ] Edición **lxqt-community** — primer commit base
 
-Ya lo es. En dos ediciones.
+## A largo plazo
+
+- [ ] Rice visual de todas las ediciones
+- [ ] Misae — fork de WindowMaker
+- [ ] Menma — fork de Wine
+- [ ] Repo propio de paquetes Wagashi
+- [ ] Web en wagashi.rednek.org
+- [ ] Página de donaciones (Yasashii: "the door is open")
+- [ ] VISION.md actualizado con linux-zen como kernel oficial
+- [ ] Year Zero cerrar cuando Monochrome y LXQt estén listos
+- [ ] "After The First Boot" — siguiente documento
 
 ---
 
-*Made by Nekki.mov, for everyone sensitive.*  
-*Year Zero — 28 de mayo de 2026*
+## Filosofía del proyecto
+
+> "Not what it does. How it speaks."
+> "If it doesn't feel Yasashii, it's not done yet."
+> "If it still turns on, it deserves a second chance."
+> "Your computer, always yours."
+> "Installation should feel like arriving somewhere, not surviving something."
+> "Not built to impress — built to be lived in."
+> "Silence is a design choice."
+> "Same soul, different shape."
+> "Two spaces. It's always two spaces."
+
+---
+
+*Made by Nekki.mov, for everyone sensitive. 🍡*
