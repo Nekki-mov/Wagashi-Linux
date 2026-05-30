@@ -161,6 +161,7 @@ def setup_passthrough(gpu_choice):
             f.write("options kvm ignore_msrs=1\n")
             f.write("options kvm report_ignored_msrs=0\n")
 
+    run("sync")
     say("Regenerating GRUB and initramfs for passthrough...")
     run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
     run("arch-chroot /mnt mkinitcpio -P")
@@ -413,6 +414,7 @@ def main():
             'GRUB_GFXPAYLOAD_LINUX=keep\n'
         )
 
+    run("sync")
     run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
 
     # Sobreescribir theme.txt DESPUÉS de grub-mkconfig — sin PNGs
