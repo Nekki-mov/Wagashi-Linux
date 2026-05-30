@@ -1,9 +1,8 @@
-# Wagashi Linux — KDE Edition
+# Wagashi Linux — Monochrome Edition
+**The quiet one. Black, grey, and one color that matters.**
 
-**The primary edition. The one people will screenshot — for the right reasons.**
-
-This is Wagashi Linux with KDE Plasma 6 on Wayland.  
-Soft. Warm. Carefully tuned. Modern without being cold.
+This is Wagashi Linux with KDE Plasma 6 on Wayland — stripped of noise,  
+built for people who find comfort in stillness.
 
 ---
 
@@ -13,12 +12,26 @@ A complete, bootable Arch-based system with:
 
 - **linux-zen** kernel
 - **KDE Plasma 6** on Wayland
-- **SDDM** as the display manager
+- **SDDM** with the Monochrome wallpaper
 - **Hikaru** — a graphical installer that feels like arriving somewhere
 - **dango** — a package manager that talks like a person
 - **Ushio** — virtualization with GPU passthrough, configured at install time
 - **Plymouth** splash screen — the dango, OLED black, yours
 - **GRUB** with a custom Wagashi theme
+- **Bitstream Vera Sans** — because good type is invisible until it isn't
+- **Wagashi color scheme** — black, greys, white, and coral where it counts
+
+---
+
+## What makes Monochrome different
+
+Everything is black. Not dark grey. Not navy. Black.  
+The only color is coral — #e8a0a0 — and it appears exactly where it needs to.  
+Selections. Focus. The things that matter.
+
+The wallpaper is a girl with a pink umbrella walking a Japanese street at night.  
+Everything else is monochrome. She isn't.  
+That's the whole idea.
 
 ---
 
@@ -62,7 +75,7 @@ Pacman and AUR, unified. No Flatpak. Intentionally.
 ## Building
 
 ```bash
-git checkout kde
+git checkout monochrome
 sudo mkarchiso -v -w ~/wagashi-work -o ~/wagashi-out ~/wagashi
 ```
 
