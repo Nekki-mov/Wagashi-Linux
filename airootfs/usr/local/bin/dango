@@ -4,7 +4,7 @@
 
 import subprocess, sys, os
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 def say(msg):
     print(f"\n✦ {msg}")
@@ -17,8 +17,9 @@ def run(cmd, capture=False):
 def has_yay():
     return run("which yay", capture=True).returncode == 0
 
-def is_root():
-    return os.geteuid() == 0
+def is_live():
+    """Detecta si estamos en el entorno live de Wagashi."""
+    return os.path.exists("/run/archiso")
 
 def help():
     print("""
@@ -26,11 +27,17 @@ def help():
 
   dango -S  <pkg>     install a package
   dango -R  <pkg>     remove a package
+  dango -Rs <pkg>     remove a package and its dependencies
+  dango -Sy           sync package databases
   dango -Syu          update everything
   dango -Ss <query>   search for a package
   dango -Si <pkg>     show package info
   dango -Q            list installed packages
+  dango -Ql <pkg>     list files owned by a package
+  dango -Qi <pkg>     info about an installed package
+  dango -Qo <file>    which package owns this file
   dango -Sc           clean package cache
+  dango -Scc          clean entire package cache
   dango --version     show version
 
   Searches pacman and AUR automatically.
@@ -39,6 +46,9 @@ def help():
 
 def install(pkg):
     say(f"Looking for {pkg}...")
+    if is_live():
+        say("Live system detected. Syncing repos first...")
+        run("pacman -Sy")
     result = run(f"pacman -S {pkg}")
     if result.returncode != 0:
         if has_yay():
@@ -51,15 +61,28 @@ def install(pkg):
     else:
         say(f"{pkg} is ready.")
 
-def remove(pkg):
+def remove(pkg, with_deps=False):
     say(f"Removing {pkg}...")
-    result = run(f"pacman -Rs {pkg}")
+    flag = "-Rs" if with_deps else "-R"
+    result = run(f"pacman {flag} {pkg}")
     if result.returncode == 0:
         say("Gone. No judgment.")
     else:
         say(f"Couldn't remove {pkg}. It might not be installed.")
 
+def sync():
+    if is_live():
+        say("Syncing package databases. (Live system — not updating, just syncing.)")
+    else:
+        say("Syncing package databases...")
+    run("pacman -Sy")
+    say("Repos are up to date.")
+
 def update():
+    if is_live():
+        say("You're on a live system. Updates here won't survive a reboot.")
+        say("Install Wagashi Linux first, then update from there.")
+        return
     say("Checking what's new...")
     run("pacman -Syu")
     if has_yay():
@@ -73,9 +96,10 @@ def search(query):
     if has_yay():
         run(f"yay -Ss {query} --aur")
 
-def info(pkg):
+def info(pkg, installed=False):
     say(f"Here's what I know about {pkg}:")
-    result = run(f"pacman -Si {pkg}")
+    flag = "-Qi" if installed else "-Si"
+    result = run(f"pacman {flag} {pkg}")
     if result.returncode != 0:
         say(f"Never heard of {pkg}. Try: dango -Ss {pkg}")
 
@@ -83,18 +107,32 @@ def list_installed():
     say("Everything currently installed:")
     run("pacman -Q")
 
-def clean():
-    say("Cleaning up. Your disk will thank you.")
-    run("pacman -Sc")
+def list_files(pkg):
+    say(f"Files owned by {pkg}:")
+    result = run(f"pacman -Ql {pkg}")
+    if result.returncode != 0:
+        say(f"{pkg} doesn't seem to be installed.")
+
+def owns(file):
+    say(f"Figuring out who owns {file}...")
+    result = run(f"pacman -Qo {file}")
+    if result.returncode != 0:
+        say(f"Nothing claims to own {file}. Orphan file.")
+
+def clean(full=False):
+    if full:
+        say("Clearing the entire package cache. No going back.")
+        run("pacman -Scc")
+    else:
+        say("Cleaning up old package versions. Your disk will thank you.")
+        run("pacman -Sc")
     say("Done. That feels better.")
 
 def main():
     args = sys.argv[1:]
-
     if not args or args[0] in ("--help", "-h"):
         help()
         return
-
     if args[0] == "--version":
         print(f"\n  dango {VERSION} — Wagashi Linux\n")
         return
@@ -107,34 +145,51 @@ def main():
             say("Install what, exactly?")
             return
         install(pkg)
-
-    elif flag in ("-R", "-Rs"):
+    elif flag == "-R":
         if not pkg:
             say("Remove what?")
             return
-        remove(pkg)
-
+        remove(pkg, with_deps=False)
+    elif flag == "-Rs":
+        if not pkg:
+            say("Remove what?")
+            return
+        remove(pkg, with_deps=True)
+    elif flag == "-Sy":
+        sync()
     elif flag == "-Syu":
         update()
-
     elif flag == "-Ss":
         if not pkg:
             say("Search for what?")
             return
         search(pkg)
-
     elif flag == "-Si":
         if not pkg:
             say("Info about what?")
             return
-        info(pkg)
-
+        info(pkg, installed=False)
+    elif flag == "-Qi":
+        if not pkg:
+            say("Info about what?")
+            return
+        info(pkg, installed=True)
     elif flag == "-Q":
         list_installed()
-
+    elif flag == "-Ql":
+        if not pkg:
+            say("List files for what package?")
+            return
+        list_files(pkg)
+    elif flag == "-Qo":
+        if not pkg:
+            say("Which file?")
+            return
+        owns(pkg)
     elif flag == "-Sc":
-        clean()
-
+        clean(full=False)
+    elif flag == "-Scc":
+        clean(full=True)
     else:
         say(f"I don't know what '{flag}' means. Try: dango --help")
 

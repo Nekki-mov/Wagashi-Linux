@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Hikaru
+Comment=Wagashi Linux Installer
+Exec=hikaru-gui
+Terminal=false
+X-KDE-autostart-phase=2

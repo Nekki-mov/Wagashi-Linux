@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Install Wagashi Linux
+Comment=Start the Wagashi Linux installer
+Exec=hikaru-gui
+Icon=system-software-install
+Terminal=false
