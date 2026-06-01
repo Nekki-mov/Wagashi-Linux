@@ -23,4 +23,6 @@ file_permissions=(
   ["/usr/local/bin/livecd-sound"]="0:0:755"
   ["/usr/local/bin/hikaru"]="0:0:755"
   ["/usr/local/bin/dango"]="0:0:755"
+  ["/usr/local/bin/hikaru-gui"]="0:0:755"
+  ["/etc/lightdm/Xsession"]="0:0:755"
 )

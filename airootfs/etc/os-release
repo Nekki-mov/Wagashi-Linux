@@ -1,5 +1,5 @@
 NAME="Wagashi Linux"
-PRETTY_NAME="Wagashi Linux"
+PRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"
 ID=wagashi
 ID_LIKE=arch
 BUILD_ID=rolling

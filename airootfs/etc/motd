@@ -1,7 +1,8 @@
-Welcome to Wagashi Linux.
+Welcome to Wagashi Linux — Nayuki (LXQt).
 Your computer, always yours.
 
-✦ To install, run: hikaru
+✦ To install (graphical): hikaru-gui
+✦ To install (terminal):  hikaru
 ✦ For Wi-Fi: iwctl
 ✦ Ethernet should work automatically.
 
