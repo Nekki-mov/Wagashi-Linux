@@ -906,6 +906,14 @@ class InstallWorker(QThread):
         # ── User KDE config ───────────────────────────────────────────────────
         home = f"/mnt/home/{username}"
         self.run_cmd(f"mkdir -p {home}/.config/autostart")
+        self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
+            "[Desktop Entry]\n"
+            "Exec=/usr/local/bin/wagashi-firstrun\n"
+            "Icon=dialog-scripts\n"
+            "Name=Wagashi First Run\n"
+            "Type=Application\n"
+            "X-KDE-autostart-after=panel\n"
+        )
         self.run_cmd(f"mkdir -p {home}/.config/kdedefaults")
 
         # Tema oscuro — Breeze Dark

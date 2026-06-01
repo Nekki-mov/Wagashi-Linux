@@ -1,3 +1,5 @@
 #!/bin/bash
-sleep 8
+[ -f "$HOME/.wagashi-setup-done" ] && exit 0
+sleep 4
 plasma-apply-wallpaperimage /usr/share/wagashi/wallpapers/Monochrome.png
+touch "$HOME/.wagashi-setup-done"
