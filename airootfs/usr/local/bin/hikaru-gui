@@ -17,6 +17,8 @@ def detect_edition():
             content = f.read()
         if "Sayuri" in content or "Monochrome" in content:
             return "sayuri"
+        if "Nayuki" in content or "LXQt" in content:
+            return "nayuki"
     except Exception:
         pass
     return "ayu"
@@ -37,6 +39,21 @@ if EDITION == "sayuri":
         "accent_dark":  "#c07070",
         "error":        "#c07070",
         "font_title":   "Bitstream Vera Sans",
+        "font_body":    "Noto Sans",
+    }
+elif EDITION == "nayuki":
+    COLORS = {
+        "bg":           "#f0d8c0",
+        "surface":      "#f0d8d8",
+        "border":       "#d8b8a8",
+        "text":         "#604818",
+        "text_dim":     "#a07848",
+        "text_ghost":   "#c8a888",
+        "accent":       "#d890a8",
+        "accent_hover": "#e8a8c0",
+        "accent_dark":  "#b87090",
+        "error":        "#b87090",
+        "font_title":   "Noto Serif",
         "font_body":    "Noto Sans",
     }
 else:
@@ -880,7 +897,8 @@ class InstallWorker(QThread):
             "zsh nano git curl wget htop unzip tar man-db "
             "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
             "mesa noto-fonts noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
-            "plasma sddm python-pyqt6 plymouth konsole"
+            "lxqt openbox lightdm lightdm-gtk-greeter accountsservice "
+            "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs"
         )
         extra = purpose_packages(d.get("purpose", "everyday"))
         self.run_cmd(f"pacstrap /mnt {base} {extra}".strip())
@@ -903,57 +921,9 @@ class InstallWorker(QThread):
         self.run_cmd(f"echo '{username}:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
-        # ── User KDE config ───────────────────────────────────────────────────
+        # ── User LXQt config ──────────────────────────────────────────────────
         home = f"/mnt/home/{username}"
         self.run_cmd(f"mkdir -p {home}/.config/autostart")
-        self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
-            "[Desktop Entry]\n"
-            "Exec=/usr/local/bin/wagashi-firstrun\n"
-            "Icon=dialog-scripts\n"
-            "Name=Wagashi First Run\n"
-            "Type=Application\n"
-            "X-KDE-autostart-after=panel\n"
-        )
-        self.run_cmd(f"mkdir -p {home}/.config/kdedefaults")
-
-        # Tema oscuro — Breeze Dark
-        self.write_file(f"{home}/.config/kdeglobals",
-            "[General]\n"
-            "ColorScheme=BreezeDark\n"
-            "\n"
-            "[KDE]\n"
-            "LookAndFeelPackage=org.kde.breezedark.desktop\n"
-        )
-        self.write_file(f"{home}/.config/kdedefaults/kdeglobals",
-            "[General]\n"
-            "ColorScheme=BreezeDark\n"
-            "\n"
-            "[KDE]\n"
-            "LookAndFeelPackage=org.kde.breezedark.desktop\n"
-        )
-        self.write_file(f"{home}/.config/plasmarc",
-            "[Theme]\n"
-            "name=breeze-dark\n"
-        )
-
-        # Deshabilitar Welcome Center
-        self.write_file(f"{home}/.config/plasma-welcome.conf",
-            "[General]\n"
-            "showOnStart=false\n"
-        )
-
-        # Wallpaper via plasma-org.kde.plasma.desktop-appletsrc
-        self.write_file(f"{home}/.config/plasma-org.kde.plasma.desktop-appletsrc",
-       "[Containments][1][Wallpaper][org.kde.image][General]\n"
-       "Image=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
-       "PreviewImage=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
-       "\n"
-       "[Containments][2][Wallpaper][org.kde.image][General]\n"
-       "Image=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
-       "PreviewImage=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
-        )
-
-        # Fix ownership
         self.run_cmd(f"chown -R {username}:{username} {home}/.config")
 
         # ── Bootloader ────────────────────────────────────────────────────────
@@ -1011,7 +981,7 @@ class InstallWorker(QThread):
         self.status("Making it ours.", 87)
         self.write_file("/mnt/etc/os-release",
             'NAME="Wagashi Linux"\n'
-            'PRETTY_NAME="Wagashi Linux"\n'
+            'PRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n'
             'ID=wagashi\n'
             'ID_LIKE=arch\n'
             'BUILD_ID=rolling\n'
@@ -1020,7 +990,7 @@ class InstallWorker(QThread):
             'LOGO=wagashi\n'
         )
         self.write_file("/mnt/etc/motd",
-            "Welcome to Wagashi Linux.\nYour computer, always yours.\n"
+            "Welcome to Wagashi Linux — Nayuki (LXQt).\nYour computer, always yours.\n"
         )
 
         # ── Plymouth ──────────────────────────────────────────────────────────
@@ -1041,7 +1011,7 @@ class InstallWorker(QThread):
         # ── Services ──────────────────────────────────────────────────────────
         self.status("Starting the things that should always be running.", 94)
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")
-        self.run_cmd("arch-chroot /mnt systemctl enable sddm")
+        self.run_cmd("arch-chroot /mnt systemctl enable lightdm")
         self.run_cmd("arch-chroot /mnt systemctl enable bluetooth")
         self.run_cmd("arch-chroot /mnt systemctl enable cups")
 

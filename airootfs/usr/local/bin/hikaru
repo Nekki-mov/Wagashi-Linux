@@ -374,7 +374,8 @@ def main():
         "zsh nano git curl wget htop unzip tar man-db "
         "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
         "mesa noto-fonts noto-fonts-emoji ttf-liberation "
-        "plasma sddm python-pyqt6 plymouth"
+        "lxqt openbox lightdm lightdm-gtk-greeter accountsservice "
+        "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs"
     )
     extra_pkgs = purpose_packages(purpose)
     run(f"pacstrap /mnt {base_pkgs} {extra_pkgs}".strip())
@@ -428,7 +429,7 @@ def main():
     say("Applying Wagashi branding...")
     with open("/mnt/etc/os-release", "w") as f:
         f.write('NAME="Wagashi Linux"\n')
-        f.write('PRETTY_NAME="Wagashi Linux"\n')
+        f.write('PRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n')
         f.write('ID=wagashi\n')
         f.write('ID_LIKE=arch\n')
         f.write('BUILD_ID=rolling\n')
@@ -437,7 +438,7 @@ def main():
         f.write('LOGO=wagashi\n')
 
     with open("/mnt/etc/motd", "w") as f:
-        f.write('Welcome to Wagashi Linux.\n')
+        f.write('Welcome to Wagashi Linux — Nayuki (LXQt).\n')
         f.write('Your computer, always yours.\n')
 
     say("Installing Plymouth theme...")
@@ -465,7 +466,7 @@ def main():
         say(f"Looks like you're in a virtual machine ({vm_check.stdout.strip()}). That's fine, just so you know.")
 
     say("Enabling services...")
-    run("arch-chroot /mnt systemctl enable NetworkManager sddm bluetooth cups")
+    run("arch-chroot /mnt systemctl enable NetworkManager lightdm bluetooth cups")
 
     if enable_firewall:
         run("pacstrap /mnt ufw", check=False)
