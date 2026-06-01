@@ -908,16 +908,6 @@ class InstallWorker(QThread):
         self.run_cmd(f"mkdir -p {home}/.config/autostart")
         self.run_cmd(f"mkdir -p {home}/.config/kdedefaults")
 
-        # Autostart: wagashi-firstrun (sin condición)
-        self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
-            "[Desktop Entry]\n"
-            "Exec=/usr/local/bin/wagashi-firstrun\n"
-            "Icon=dialog-scripts\n"
-            "Name=Wagashi First Run\n"
-            "Type=Application\n"
-            "X-KDE-autostart-after=panel\n"
-        )
-
         # Tema oscuro — Breeze Dark
         self.write_file(f"{home}/.config/kdeglobals",
             "[General]\n"
@@ -946,8 +936,13 @@ class InstallWorker(QThread):
 
         # Wallpaper via plasma-org.kde.plasma.desktop-appletsrc
         self.write_file(f"{home}/.config/plasma-org.kde.plasma.desktop-appletsrc",
-            "[Containments][1][Wallpaper][org.kde.image][General]\n"
-            "Image=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
+       "[Containments][1][Wallpaper][org.kde.image][General]\n"
+       "Image=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
+       "PreviewImage=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
+       "\n"
+       "[Containments][2][Wallpaper][org.kde.image][General]\n"
+       "Image=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
+       "PreviewImage=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
         )
 
         # Fix ownership

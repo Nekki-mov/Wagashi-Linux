@@ -1,2 +1,7 @@
 [Containments][1][Wallpaper][org.kde.image][General]
 Image=file:///usr/share/wagashi/wallpapers/Monochrome.png
+PreviewImage=file:///usr/share/wagashi/wallpapers/Monochrome.png
+
+[Containments][2][Wallpaper][org.kde.image][General]
+Image=file:///usr/share/wagashi/wallpapers/Monochrome.png
+PreviewImage=file:///usr/share/wagashi/wallpapers/Monochrome.png
