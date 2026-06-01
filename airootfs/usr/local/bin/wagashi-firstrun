@@ -1,0 +1,4 @@
+#!/bin/bash
+[ -f "$HOME/.wagashi-setup-done" ] && exit 0
+xdg-user-dirs-update
+touch "$HOME/.wagashi-setup-done"

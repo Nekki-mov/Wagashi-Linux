@@ -385,6 +385,10 @@ def main():
     run(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
     run("arch-chroot /mnt hwclock --systohc")
     run(f"echo '{hostname}' > /mnt/etc/hostname")
+    with open("/mnt/etc/hosts", "w") as f:
+        f.write(f"127.0.0.1   localhost\n")
+        f.write(f"::1         localhost\n")
+        f.write(f"127.0.1.1   {hostname}.localdomain {hostname}\n")
     run("echo 'en_US.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
     run("arch-chroot /mnt locale-gen")
     run("echo 'LANG=en_US.UTF-8' > /mnt/etc/locale.conf")
@@ -396,6 +400,38 @@ def main():
     run(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
+
+    # easter eggs
+    with open(f"/mnt/home/{username}/.zshrc", "w") as f:
+        f.write('pierogi() { echo "O KURWA"; }\n')
+        f.write("calçot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n")
+
+    # wagashi-firstrun autostart
+    run(f"mkdir -p /mnt/home/{username}/.config/autostart")
+    with open(f"/mnt/home/{username}/.config/autostart/wagashi-firstrun.desktop", "w") as f:
+        f.write("[Desktop Entry]\n")
+        f.write("Type=Application\n")
+        f.write("Name=Wagashi First Run\n")
+        f.write("Exec=/usr/local/bin/wagashi-firstrun\n")
+        f.write("Icon=dialog-scripts\n")
+        f.write("X-LXQT-Need-Tray=false\n")
+    run(f"chown -R {username}:{username} /mnt/home/{username}")
+
+    # LightDM config
+    run("mkdir -p /mnt/etc/lightdm")
+    with open("/mnt/etc/lightdm/lightdm.conf", "w") as f:
+        f.write("[LightDM]\nallow-guest=false\n\n[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nsession-wrapper=/etc/lightdm/Xsession\n")
+    with open("/mnt/etc/lightdm/Xsession", "w") as f:
+        f.write("#!/bin/sh\nxdg-user-dirs-update\nexec startlxqt\n")
+    run("chmod 755 /mnt/etc/lightdm/Xsession")
+
+    # copiar instaladores al sistema
+    run("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
+    run("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
+    run("cp /usr/local/bin/hikaru /mnt/usr/local/bin/hikaru")
+    run("chmod +x /mnt/usr/local/bin/hikaru")
+    run("cp /usr/local/bin/hikaru-gui /mnt/usr/local/bin/hikaru-gui")
+    run("chmod +x /mnt/usr/local/bin/hikaru-gui")
 
     say("Installing bootloader...")
     run("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")

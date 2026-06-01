@@ -924,7 +924,34 @@ class InstallWorker(QThread):
         # ── User LXQt config ──────────────────────────────────────────────────
         home = f"/mnt/home/{username}"
         self.run_cmd(f"mkdir -p {home}/.config/autostart")
-        self.run_cmd(f"chown -R {username}:{username} {home}/.config")
+
+        # wagashi-firstrun autostart
+        self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
+            "[Desktop Entry]\n"
+            "Type=Application\n"
+            "Name=Wagashi First Run\n"
+            "Exec=/usr/local/bin/wagashi-firstrun\n"
+            "Icon=dialog-scripts\n"
+            "X-LXQT-Need-Tray=false\n"
+        )
+
+        # easter eggs en zshrc
+        self.write_file(f"{home}/.zshrc",
+            'pierogi() { echo "O KURWA"; }\n'
+            'calçot() { echo "Did you know, Hatsune Miku was made by Catalonian people?'
+            ' Yeah, Miku was made by Pompeu Fabra University,'
+            " so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n"
+        )
+
+        self.run_cmd(f"chown -R {username}:{username} {home}")
+
+        # ── /etc/hosts ────────────────────────────────────────────────────────
+        hostname = d.get("hostname", "wagashi")
+        self.write_file("/mnt/etc/hosts",
+            f"127.0.0.1   localhost\n"
+            f"::1         localhost\n"
+            f"127.0.1.1   {hostname}.localdomain {hostname}\n"
+        )
 
         # ── Bootloader ────────────────────────────────────────────────────────
         self.status("Telling the computer how to wake up.", 82)
@@ -971,11 +998,30 @@ class InstallWorker(QThread):
         )
 
         # ── Wagashi assets ────────────────────────────────────────────────────
-        self.status("Copying wallpapers and tools.", 86)
-        self.run_cmd("mkdir -p /mnt/usr/share/wagashi/wallpapers")
-        self.run_cmd("cp -r /usr/share/wagashi/wallpapers/. /mnt/usr/share/wagashi/wallpapers/")
+        self.status("Copying tools and setting things up.", 86)
         self.run_cmd("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
         self.run_cmd("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
+        self.run_cmd("cp /usr/local/bin/hikaru-gui /mnt/usr/local/bin/hikaru-gui")
+        self.run_cmd("chmod +x /mnt/usr/local/bin/hikaru-gui")
+        self.run_cmd("cp /usr/local/bin/hikaru /mnt/usr/local/bin/hikaru")
+        self.run_cmd("chmod +x /mnt/usr/local/bin/hikaru")
+
+        # LightDM config en sistema instalado
+        self.run_cmd("mkdir -p /mnt/etc/lightdm")
+        self.write_file("/mnt/etc/lightdm/lightdm.conf",
+            "[LightDM]\n"
+            "allow-guest=false\n"
+            "\n"
+            "[Seat:*]\n"
+            "greeter-session=lightdm-gtk-greeter\n"
+            "session-wrapper=/etc/lightdm/Xsession\n"
+        )
+        self.write_file("/mnt/etc/lightdm/Xsession",
+            "#!/bin/sh\n"
+            "xdg-user-dirs-update\n"
+            "exec startlxqt\n"
+        )
+        self.run_cmd("chmod 755 /mnt/etc/lightdm/Xsession")
 
         # ── Branding ──────────────────────────────────────────────────────────
         self.status("Making it ours.", 87)
