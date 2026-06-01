@@ -1,0 +1,7 @@
+[Desktop Entry]
+Exec=/usr/local/bin/wagashi-firstrun
+Icon=dialog-scripts
+Name=Wagashi First Run
+Type=Application
+X-KDE-autostart-after=panel
+X-KDE-autostart-condition=wagashi-firstrun:General:firstRunDone:false

@@ -1,11 +1,14 @@
 #!/bin/bash
 # Wagashi Monochrome — first run configuration
 
-# Panel: full width bottom, height 44px
-kwriteconfig5 --file plasmashellrc --group PlasmaViews --group "Panel 1" --key thickness 44
+# Wait for Plasma to be fully ready
+sleep 5
 
 # Wallpaper
 plasma-apply-wallpaperimage /usr/share/wagashi/wallpapers/Monochrome.png
+
+# Panel: full width bottom, height 44px
+kwriteconfig5 --file plasmashellrc --group PlasmaViews --group "Panel 1" --key thickness 44
 
 # Mark as done
 kwriteconfig5 --file wagashi-firstrun --group General --key firstRunDone true
