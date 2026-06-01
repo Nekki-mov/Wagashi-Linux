@@ -1,3 +1,13 @@
 #!/bin/sh
-xdg-user-dirs-update
+# Si no hay batería, silenciar lxqt-powermanagement
+if ! ls /sys/class/power_supply/BAT* 2>/dev/null | grep -q BAT; then
+    mkdir -p ~/.config/autostart
+    cat > ~/.config/autostart/lxqt-powermanagement.desktop << 'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=LXQt Power Management
+Exec=lxqt-powermanagement
+Hidden=true
+DESKTOP
+fi
 exec startlxqt

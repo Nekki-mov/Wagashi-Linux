@@ -1,0 +1,8 @@
+auth        required    pam_nologin.so
+auth        required    pam_succeed_if.so user != nobody quiet_success
+auth        required    pam_permit.so
+account     required    pam_nologin.so
+account     include     system-local-login
+password    include     system-local-login
+session     required    pam_limits.so
+session     include     system-local-login

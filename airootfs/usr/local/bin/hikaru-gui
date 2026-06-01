@@ -44,11 +44,11 @@ if EDITION == "sayuri":
 elif EDITION == "nayuki":
     COLORS = {
         "bg":           "#f0d8c0",
-        "surface":      "#f0d8d8",
-        "border":       "#d8b8a8",
-        "text":         "#604818",
-        "text_dim":     "#a07848",
-        "text_ghost":   "#c8a888",
+        "surface":      "#e8c8b0",
+        "border":       "#c8a888",
+        "text":         "#3a2a0a",
+        "text_dim":     "#6a4a1a",
+        "text_ghost":   "#9a7848",
         "accent":       "#d890a8",
         "accent_hover": "#e8a8c0",
         "accent_dark":  "#b87090",
@@ -439,8 +439,17 @@ class NetworkPage(BasePage):
     def check(self):
         result = subprocess.run("ping -c 1 -W 1 1.1.1.1", shell=True, capture_output=True)
         if result.returncode == 0:
-            self.status.setText("connected.")
-            self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent; font-size: 14px;")
+            self.status.setText("✦ connected.")
+            if EDITION == "nayuki":
+                self.status.setStyleSheet(
+                    f"color: {COLORS['accent_dark']};"
+                    f"background: {COLORS['surface']};"
+                    f"font-size: 15px; font-weight: 600;"
+                    f"padding: 6px 18px;"
+                    f"border-radius: 8px;"
+                )
+            else:
+                self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent; font-size: 14px;")
         else:
             self.status.setText("no connection found.\nyou can continue, but installation may fail.")
             self.status.setStyleSheet(f"color: {COLORS['error']}; background: transparent; font-size: 14px;")
@@ -1169,7 +1178,8 @@ class DonePage(BasePage):
         title = QLabel("done.")
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet(f"font-family: '{COLORS['font_title']}'; font-size: 56px; font-weight: 300; color: {COLORS['accent']}; background: transparent;")
+        done_color = COLORS['text'] if EDITION == "nayuki" else COLORS['accent']
+        title.setStyleSheet(f"font-family: '{COLORS['font_title']}'; font-size: 56px; font-weight: 300; color: {done_color}; background: transparent;")
         self.layout.addWidget(title)
         self.layout.addSpacing(24)
 
