@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
 
-iso_name="Wagashi-Monochrome"
+iso_name="Wagashi-Sayuri"
 iso_label="ARCH_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
 iso_publisher="Nekki.mov <https://wagashi.rednek.org>"
 iso_application="Wagashi Linux - Sayuri (Monochrome)"

@@ -2,4 +2,11 @@
 [ -f "$HOME/.wagashi-setup-done" ] && exit 0
 sleep 4
 plasma-apply-wallpaperimage /usr/share/wagashi/wallpapers/Monochrome.png
+# Esperar un momento para que Plasma escriba su config
+sleep 2
+# Parchear el config con nuestro wallpaper
+kwriteconfig5 --file plasma-org.kde.plasma.desktop-appletsrc \
+    --group "Containments" --group "1" --group "Wallpaper" \
+    --group "org.kde.image" --group "General" \
+    --key "Image" "file:///usr/share/wagashi/wallpapers/Monochrome.png"
 touch "$HOME/.wagashi-setup-done"
