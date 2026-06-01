@@ -4,5 +4,8 @@
 # Panel: full width bottom, height 44px
 kwriteconfig5 --file plasmashellrc --group PlasmaViews --group "Panel 1" --key thickness 44
 
+# Wallpaper
+plasma-apply-wallpaperimage /usr/share/wagashi/wallpapers/Monochrome.png
+
 # Mark as done
 kwriteconfig5 --file wagashi-firstrun --group General --key firstRunDone true
