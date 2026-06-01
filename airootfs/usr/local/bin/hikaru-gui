@@ -25,7 +25,6 @@ EDITION = detect_edition()
 
 # ── Palettes ──────────────────────────────────────────────────────────────────
 if EDITION == "sayuri":
-    # Sayuri — Monochrome. Black, greys, coral as the only color.
     COLORS = {
         "bg":           "#000000",
         "surface":      "#080808",
@@ -41,7 +40,6 @@ if EDITION == "sayuri":
         "font_body":    "Noto Sans",
     }
 else:
-    # Ayu — KDE. Warmer, more color, still restrained.
     COLORS = {
         "bg":           "#0e0e12",
         "surface":      "#16161e",
@@ -281,7 +279,6 @@ class BasePage(QWidget):
         self._outer.setContentsMargins(0, 0, 0, 0)
         self._outer.setSpacing(0)
 
-        # Centered column — max 640px
         self._center = QWidget()
         self._center.setMaximumWidth(640)
         self.layout = QVBoxLayout(self._center)
@@ -317,13 +314,6 @@ class BasePage(QWidget):
         label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.layout.addWidget(label)
         self.layout.addSpacing(12)
-
-    def add_divider(self):
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setStyleSheet(f"color: {COLORS['border']}; background: {COLORS['border']}; max-height: 1px;")
-        self.layout.addWidget(line)
-        self.layout.addSpacing(32)
 
     def add_nav(self, back=True, next_text="Continue", next_fn=None):
         self.layout.addStretch()
@@ -831,6 +821,11 @@ class InstallWorker(QThread):
             if line: self.log_line.emit(f"[err] {line}")
         return result
 
+    def write_file(self, path, content):
+        """Write a file directly from Python — no shell heredoc issues."""
+        with open(path, "w") as f:
+            f.write(content)
+
     def status(self, msg, pct):
         self.status_changed.emit(msg, pct)
         self.log_line.emit(f"── {msg}")
@@ -846,7 +841,9 @@ class InstallWorker(QThread):
         timezone  = d.get("timezone", "UTC")
         keyboard  = d.get("keyboard", "us")
         layout    = d.get("layout",   "simple")
+        username  = d["username"]
 
+        # ── Disk ──────────────────────────────────────────────────────────────
         self.status("Making room for Wagashi.", 5)
         self.run_cmd(f"wipefs -af {disk}")
         self.run_cmd(f"parted -s {disk} mklabel gpt")
@@ -876,6 +873,7 @@ class InstallWorker(QThread):
         if layout == "separated":
             self.run_cmd(f"mount --mkdir {part_home} /mnt/home")
 
+        # ── Packages ──────────────────────────────────────────────────────────
         self.status("Installing Wagashi Linux. This is the slow part.", 25)
         base = (
             "base linux-zen linux-firmware sudo networkmanager grub efibootmgr "
@@ -887,6 +885,7 @@ class InstallWorker(QThread):
         extra = purpose_packages(d.get("purpose", "everyday"))
         self.run_cmd(f"pacstrap /mnt {base} {extra}".strip())
 
+        # ── System config ─────────────────────────────────────────────────────
         self.status("Teaching the system where it is.", 70)
         self.run_cmd("genfstab -U /mnt >> /mnt/etc/fstab")
         self.run_cmd(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
@@ -898,58 +897,145 @@ class InstallWorker(QThread):
         if keyboard != "us":
             self.run_cmd(f"echo 'KEYMAP={keyboard}' > /mnt/etc/vconsole.conf")
 
+        # ── User ──────────────────────────────────────────────────────────────
         self.status("Setting a place for you.", 78)
-        self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {d['username']}")
-        self.run_cmd(f"echo '{d['username']}:{d['password']}' | arch-chroot /mnt chpasswd")
+        self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
+        self.run_cmd(f"echo '{username}:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
-        self.run_cmd(f"mkdir -p /mnt/home/{d['username']}/.config/autostart")
-        self.run_cmd(f"mkdir -p /mnt/home/{d['username']}/.config/autostart")
-        self.run_cmd(f"mkdir -p /mnt/home/{d['username']}/.config/autostart")
-        self.run_cmd(f"cp /etc/skel/.config/autostart/wagashi-firstrun.desktop /mnt/home/{d['username']}/.config/autostart/")
-        self.run_cmd(f"chown -R {d['username']}:{d['username']} /mnt/home/{d['username']}/.config")
-        wallpaper_conf = "[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
-        with open(f"/mnt/home/{d['username']}/.config/plasma-org.kde.plasma.desktop-appletsrc", "w") as f:
-        f.write(wallpaper_conf)
-        self.run_cmd(f"chown {d['username']}:{d['username']} /mnt/home/{d['username']}/.config/plasma-org.kde.plasma.desktop-appletsrc")
-        self.run_cmd(f"chown -R {d['username']}:{d['username']} /mnt/home/{d['username']}/.config")
 
+        # ── User KDE config ───────────────────────────────────────────────────
+        home = f"/mnt/home/{username}"
+        self.run_cmd(f"mkdir -p {home}/.config/autostart")
+        self.run_cmd(f"mkdir -p {home}/.config/kdedefaults")
+
+        # Autostart: wagashi-firstrun (sin condición)
+        self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
+            "[Desktop Entry]\n"
+            "Exec=/usr/local/bin/wagashi-firstrun\n"
+            "Icon=dialog-scripts\n"
+            "Name=Wagashi First Run\n"
+            "Type=Application\n"
+            "X-KDE-autostart-after=panel\n"
+        )
+
+        # Tema oscuro — Breeze Dark
+        self.write_file(f"{home}/.config/kdeglobals",
+            "[General]\n"
+            "ColorScheme=BreezeDark\n"
+            "\n"
+            "[KDE]\n"
+            "LookAndFeelPackage=org.kde.breezedark.desktop\n"
+        )
+        self.write_file(f"{home}/.config/kdedefaults/kdeglobals",
+            "[General]\n"
+            "ColorScheme=BreezeDark\n"
+            "\n"
+            "[KDE]\n"
+            "LookAndFeelPackage=org.kde.breezedark.desktop\n"
+        )
+        self.write_file(f"{home}/.config/plasmarc",
+            "[Theme]\n"
+            "name=breeze-dark\n"
+        )
+
+        # Deshabilitar Welcome Center
+        self.write_file(f"{home}/.config/plasma-welcome.conf",
+            "[General]\n"
+            "showOnStart=false\n"
+        )
+
+        # Wallpaper via plasma-org.kde.plasma.desktop-appletsrc
+        self.write_file(f"{home}/.config/plasma-org.kde.plasma.desktop-appletsrc",
+            "[Containments][1][Wallpaper][org.kde.image][General]\n"
+            "Image=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
+        )
+
+        # Fix ownership
+        self.run_cmd(f"chown -R {username}:{username} {home}/.config")
+
+        # ── Bootloader ────────────────────────────────────────────────────────
         self.status("Telling the computer how to wake up.", 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
         self.run_cmd("mkdir -p /mnt/boot/grub/themes/wagashi")
         self.run_cmd("cp -r /usr/share/grub/themes/wagashi/. /mnt/boot/grub/themes/wagashi/")
-        with open("/mnt/etc/default/grub", "w") as f:
-            f.write('GRUB_DEFAULT=0\nGRUB_TIMEOUT=5\nGRUB_DISTRIBUTOR=""\nGRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\nGRUB_CMDLINE_LINUX=""\nGRUB_THEME="/boot/grub/themes/wagashi/theme.txt"\nGRUB_GFXMODE="1920x1080,auto"\nGRUB_GFXPAYLOAD_LINUX=keep\n')
+        self.write_file("/mnt/etc/default/grub",
+            'GRUB_DEFAULT=0\n'
+            'GRUB_TIMEOUT=5\n'
+            'GRUB_DISTRIBUTOR=""\n'
+            'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\n'
+            'GRUB_CMDLINE_LINUX=""\n'
+            'GRUB_THEME="/boot/grub/themes/wagashi/theme.txt"\n'
+            'GRUB_GFXMODE="1920x1080,auto"\n'
+            'GRUB_GFXPAYLOAD_LINUX=keep\n'
+        )
         self.run_cmd("sync")
         self.run_cmd("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
-        with open("/mnt/boot/grub/themes/wagashi/theme.txt", "w") as tf:
-            tf.write('# Wagashi Linux GRUB Theme\n# Silence is a design choice.\n\ntitle-text: ""\ndesktop-color: "#000000"\n\n+ label {\n  left = 50%-300\n  top = 38%\n  width = 600\n  height = 40\n  text = "Wagashi Linux"\n  font = "wagashi-36.pf2"\n  color = "#ffffff"\n  align = "center"\n}\n\n+ label {\n  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n  text = "your computer, always yours."\n  font = "wagashi-14.pf2"\n  color = "#333333"\n  align = "center"\n}\n\n+ boot_menu {\n  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n  item_font = "wagashi-14.pf2"\n  item_color = "#444444"\n  selected_item_color = "#e8a0a0"\n  selected_item_style = "bold"\n  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n  scrollbar = false\n}\n')
+        self.write_file("/mnt/boot/grub/themes/wagashi/theme.txt",
+            '# Wagashi Linux GRUB Theme\n'
+            '# Silence is a design choice.\n\n'
+            'title-text: ""\n'
+            'desktop-color: "#000000"\n\n'
+            '+ label {\n'
+            '  left = 50%-300\n  top = 38%\n  width = 600\n  height = 40\n'
+            '  text = "Wagashi Linux"\n'
+            '  font = "wagashi-36.pf2"\n'
+            '  color = "#ffffff"\n'
+            '  align = "center"\n}\n\n'
+            '+ label {\n'
+            '  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n'
+            '  text = "your computer, always yours."\n'
+            '  font = "wagashi-14.pf2"\n'
+            '  color = "#333333"\n'
+            '  align = "center"\n}\n\n'
+            '+ boot_menu {\n'
+            '  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n'
+            '  item_font = "wagashi-14.pf2"\n'
+            '  item_color = "#444444"\n'
+            '  selected_item_color = "#e8a0a0"\n'
+            '  selected_item_style = "bold"\n'
+            '  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n'
+            '  scrollbar = false\n}\n'
+        )
 
-        self.status("Copying wallpapers.", 86)
+        # ── Wagashi assets ────────────────────────────────────────────────────
+        self.status("Copying wallpapers and tools.", 86)
         self.run_cmd("mkdir -p /mnt/usr/share/wagashi/wallpapers")
         self.run_cmd("cp -r /usr/share/wagashi/wallpapers/. /mnt/usr/share/wagashi/wallpapers/")
         self.run_cmd("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
         self.run_cmd("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
-        self.run_cmd("mkdir -p /mnt/etc/skel/.config/autostart")
-        self.run_cmd("cp /etc/skel/.config/autostart/wagashi-firstrun.desktop /mnt/etc/skel/.config/autostart/")
 
+        # ── Branding ──────────────────────────────────────────────────────────
         self.status("Making it ours.", 87)
-        with open("/mnt/etc/os-release", "w") as f:
-            f.write('NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux"\nID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\nHOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n')
-        with open("/mnt/etc/motd", "w") as f:
-            f.write("Welcome to Wagashi Linux.\nYour computer, always yours.\n")
+        self.write_file("/mnt/etc/os-release",
+            'NAME="Wagashi Linux"\n'
+            'PRETTY_NAME="Wagashi Linux"\n'
+            'ID=wagashi\n'
+            'ID_LIKE=arch\n'
+            'BUILD_ID=rolling\n'
+            'ANSI_COLOR="1;35"\n'
+            'HOME_URL="https://wagashi.rednek.org"\n'
+            'LOGO=wagashi\n'
+        )
+        self.write_file("/mnt/etc/motd",
+            "Welcome to Wagashi Linux.\nYour computer, always yours.\n"
+        )
 
+        # ── Plymouth ──────────────────────────────────────────────────────────
         self.status("Dressing the boot screen.", 89)
         self.run_cmd("mkdir -p /mnt/usr/share/plymouth/themes/wagashi")
         self.run_cmd("cp -r /usr/share/plymouth/themes/wagashi/. /mnt/usr/share/plymouth/themes/wagashi/")
-        with open("/mnt/etc/mkinitcpio.conf", "w") as f:
-            f.write('HOOKS=(base udev plymouth autodetect microcode modconf kms block filesystems keyboard fsck)\n')
+        self.write_file("/mnt/etc/mkinitcpio.conf",
+            "HOOKS=(base udev plymouth autodetect microcode modconf kms block filesystems keyboard fsck)\n"
+        )
         self.run_cmd("arch-chroot /mnt plymouth-set-default-theme wagashi")
         self.run_cmd("arch-chroot /mnt mkinitcpio -P")
 
+        # ── dango ─────────────────────────────────────────────────────────────
         self.status("Installing dango.", 93)
         self.run_cmd("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
         self.run_cmd("chmod +x /mnt/usr/local/bin/dango")
 
+        # ── Services ──────────────────────────────────────────────────────────
         self.status("Starting the things that should always be running.", 94)
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")
         self.run_cmd("arch-chroot /mnt systemctl enable sddm")
@@ -966,7 +1052,7 @@ class InstallWorker(QThread):
             self.status("Preparing Ushio. Worlds within worlds.", 97)
             self.run_cmd("pacstrap /mnt qemu-full libvirt virt-manager dnsmasq")
             self.run_cmd("arch-chroot /mnt systemctl enable libvirtd")
-            self.run_cmd(f"arch-chroot /mnt usermod -aG libvirt {d['username']}")
+            self.run_cmd(f"arch-chroot /mnt usermod -aG libvirt {username}")
             self._setup_passthrough(d.get("gpu_passthrough", "none"))
 
         self.status("Done.", 100)
@@ -984,7 +1070,10 @@ class InstallWorker(QThread):
         with open("/mnt/etc/default/grub", "r") as f:
             grub = f.read()
         if iommu_param not in grub:
-            grub = grub.replace('GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"', f'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash {iommu_param} iommu=pt"')
+            grub = grub.replace(
+                'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"',
+                f'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash {iommu_param} iommu=pt"'
+            )
             with open("/mnt/etc/default/grub", "w") as f:
                 f.write(grub)
         with open("/mnt/etc/modprobe.d/vfio.conf", "w") as f:
