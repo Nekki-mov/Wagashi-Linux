@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
 
-iso_name="Wagashi-Nostalgia"
+iso_name="Wagashi-Mishio"
 iso_label="ARCH_$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m)"
 iso_publisher="Nekki.mov <https://wagashi.rednek.org>"
-iso_application="Wagashi Linux - Nostalgia Edition"
+iso_application="Wagashi Linux - Mishio (Nostalgia)"
 iso_version="$(date --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y.%m.%d)"
 install_dir="wagashi"
 buildmodes=('iso')
