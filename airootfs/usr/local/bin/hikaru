@@ -306,10 +306,11 @@ def main():
 
     # Security
     enable_firewall = ask_yes("Enable a firewall? Recommended for most people.")
-    enable_auto_updates = ask_yes("Check for updates automatically?")
+    enable_auto_updates = ask_yes("Keep Wagashi up to date automatically?")
 
     # Summary
     clear()
+    disk_display = f"{disks[int(choice)-1][1]} — {disks[int(choice)-1][2]}" if disks else disk
     print(f"""
     ✦ Here's the plan:
 
@@ -318,11 +319,11 @@ def main():
       Keyboard    {layout}
       Timezone    {timezone}
       Purpose     {purpose}
-      Disk        {disk}
+      Disk        {disk_display}
       Setup       {layout_choice}
-      Ushio       {"yes" if enable_vm else "no"}
+      Ushio       run other operating systems inside Wagashi — {"yes" if enable_vm else "no"}
       Firewall    {"yes" if enable_firewall else "no"}
-      Auto-update {"yes" if enable_auto_updates else "no"}
+      Updates     {"yes" if enable_auto_updates else "no"}
     """)
 
     say("Everything on that disk will be erased and replaced with Wagashi Linux.")
@@ -528,8 +529,7 @@ def main():
 
       Your computer, always yours.
 
-      ✦ You can reboot now.
-        Type: reboot
+      ✦ Type reboot to enter Wagashi.
     """)
 
 if __name__ == "__main__":

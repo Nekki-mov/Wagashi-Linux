@@ -672,11 +672,11 @@ class DiskPage(BasePage):
 
         disks = self.get_disks()
         for i, (name, size, model) in enumerate(disks):
-            rb = QRadioButton(f"/dev/{name}   {size}   {model}")
+            rb = QRadioButton(f"{size} — {model}   (/dev/{name})")
             if i == 0:
                 rb.setChecked(True)
             self.disk_group.addButton(rb, i)
-            self.disk_buttons.append((name, rb))
+            self.disk_buttons.append((name, size, model, rb))
             self.layout.addWidget(rb)
             self.layout.addSpacing(4)
 
@@ -719,10 +719,11 @@ class DiskPage(BasePage):
 
     def save(self):
         layouts = ["simple", "separated", "encrypted"]
-        for name, rb in self.disk_buttons:
+        for name, size, model, rb in self.disk_buttons:
             if rb.isChecked():
                 self.window.data["disk"] = f"/dev/{name}"
                 self.window.data["disk_name"] = name
+                self.window.data["disk_label"] = f"{size} — {model}"
                 break
         self.window.data["layout"] = layouts[self.layout_group.checkedId()]
         self.window.next_page()
@@ -788,7 +789,7 @@ class SecurityPage(BasePage):
         self.layout.addWidget(self.firewall)
         self.layout.addSpacing(16)
 
-        self.updates = QCheckBox("Check for updates automatically.")
+        self.updates = QCheckBox("Keep Wagashi up to date automatically.")
         self.updates.setChecked(True)
         self.layout.addWidget(self.updates)
         self.add_nav(next_fn=self.save)
@@ -818,12 +819,12 @@ class SummaryPage(BasePage):
             ("computer",    d.get("hostname",  "—")),
             ("keyboard",    d.get("keyboard",  "us")),
             ("timezone",    d.get("timezone",  "UTC")),
-            ("disk",        d.get("disk",      "—")),
+            ("disk",        d.get("disk_label", d.get("disk", "—"))),
             ("setup",       d.get("layout",    "—")),
             ("purpose",     d.get("purpose",   "—")),
             ("firewall",    "yes" if d.get("firewall")      else "no"),
             ("updates",     "yes" if d.get("auto_updates")  else "no"),
-            ("ushio",       "yes" if d.get("virtualization") else "no"),
+            ("ushio",       "run other operating systems inside Wagashi — " + ("yes" if d.get("virtualization") else "no")),
         ]
         lines = "\n".join(f"{k:<14}{v}" for k, v in rows)
         self.summary.setText(lines)
@@ -1196,14 +1197,30 @@ class DonePage(BasePage):
 
         self.layout.addStretch()
 
-        btn = QPushButton("reboot")
-        btn.setObjectName("primary")
-        btn.clicked.connect(lambda: subprocess.run("reboot", shell=True))
+        self.countdown = 10
+        self.reboot_btn = QPushButton(f"restart and enter Wagashi ({self.countdown})")
+        self.reboot_btn.setObjectName("primary")
+        self.reboot_btn.clicked.connect(self.do_reboot)
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
-        btn_layout.addWidget(btn)
+        btn_layout.addWidget(self.reboot_btn)
         btn_layout.addStretch()
         self.layout.addLayout(btn_layout)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.tick)
+        self.timer.start(1000)
+
+    def tick(self):
+        self.countdown -= 1
+        if self.countdown <= 0:
+            self.do_reboot()
+        else:
+            self.reboot_btn.setText(f"restart and enter Wagashi ({self.countdown})")
+
+    def do_reboot(self):
+        self.timer.stop()
+        subprocess.run("reboot", shell=True)
 
     def showEvent(self, event):
         username = self.window.data.get("username", "")
