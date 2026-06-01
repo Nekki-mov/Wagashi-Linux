@@ -5,12 +5,221 @@
 import sys
 import subprocess
 import os
+import re as _re
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 
-import re as _re
+# ── Edition detection ─────────────────────────────────────────────────────────
+def detect_edition():
+    try:
+        with open("/etc/os-release") as f:
+            content = f.read()
+        if "Sayuri" in content or "Monochrome" in content:
+            return "sayuri"
+    except Exception:
+        pass
+    return "ayu"
 
+EDITION = detect_edition()
+
+# ── Palettes ──────────────────────────────────────────────────────────────────
+if EDITION == "sayuri":
+    # Sayuri — Monochrome. Black, greys, coral as the only color.
+    COLORS = {
+        "bg":           "#000000",
+        "surface":      "#080808",
+        "border":       "#1a1a1a",
+        "text":         "#e8e8e8",
+        "text_dim":     "#484848",
+        "text_ghost":   "#282828",
+        "accent":       "#e8a0a0",
+        "accent_hover": "#f0b8b8",
+        "accent_dark":  "#c07070",
+        "error":        "#c07070",
+        "font_title":   "Bitstream Vera Sans",
+        "font_body":    "Noto Sans",
+    }
+else:
+    # Ayu — KDE. Warmer, more color, still restrained.
+    COLORS = {
+        "bg":           "#0e0e12",
+        "surface":      "#16161e",
+        "border":       "#2a2a3a",
+        "text":         "#ece6d8",
+        "text_dim":     "#6a6478",
+        "text_ghost":   "#2e2a38",
+        "accent":       "#d4a574",
+        "accent_hover": "#e8bc8c",
+        "accent_dark":  "#a87848",
+        "error":        "#e8a0a0",
+        "font_title":   "Noto Serif",
+        "font_body":    "Noto Sans",
+    }
+
+# ── Stylesheet ─────────────────────────────────────────────────────────────────
+STYLE = f"""
+    QWidget {{
+        background-color: {COLORS['bg']};
+        color: {COLORS['text']};
+        font-family: '{COLORS['font_body']}';
+        font-size: 15px;
+        border: none;
+        outline: none;
+    }}
+    QMainWindow {{
+        background-color: {COLORS['bg']};
+    }}
+    QStackedWidget {{
+        background-color: {COLORS['bg']};
+    }}
+    QLabel {{
+        background: transparent;
+        border: none;
+    }}
+    QLabel#title {{
+        font-family: '{COLORS['font_title']}';
+        font-size: 32px;
+        font-weight: 300;
+        color: {COLORS['text']};
+        letter-spacing: 1px;
+    }}
+    QLabel#subtitle {{
+        font-size: 14px;
+        color: {COLORS['text_dim']};
+        letter-spacing: 0.5px;
+    }}
+    QLabel#section {{
+        font-size: 11px;
+        color: {COLORS['text_ghost']};
+        letter-spacing: 3px;
+    }}
+    QLabel#accent {{
+        color: {COLORS['accent']};
+        font-size: 14px;
+    }}
+    QLabel#error {{
+        color: {COLORS['error']};
+        font-size: 13px;
+    }}
+    QPushButton#primary {{
+        background-color: {COLORS['accent']};
+        color: #000000;
+        border: none;
+        border-radius: 2px;
+        padding: 12px 40px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }}
+    QPushButton#primary:hover {{
+        background-color: {COLORS['accent_hover']};
+    }}
+    QPushButton#primary:pressed {{
+        background-color: {COLORS['accent_dark']};
+    }}
+    QPushButton#secondary {{
+        background-color: transparent;
+        color: {COLORS['text_dim']};
+        border: 1px solid {COLORS['border']};
+        border-radius: 2px;
+        padding: 12px 40px;
+        font-size: 13px;
+        letter-spacing: 1px;
+    }}
+    QPushButton#secondary:hover {{
+        color: {COLORS['text']};
+        border-color: {COLORS['text_dim']};
+    }}
+    QLineEdit {{
+        background-color: {COLORS['surface']};
+        color: {COLORS['text']};
+        border: none;
+        border-bottom: 1px solid {COLORS['border']};
+        border-radius: 0px;
+        padding: 12px 8px;
+        font-size: 15px;
+        selection-background-color: {COLORS['accent_dark']};
+    }}
+    QLineEdit:focus {{
+        border-bottom: 1px solid {COLORS['accent']};
+        background-color: {COLORS['surface']};
+    }}
+    QLineEdit::placeholder {{
+        color: {COLORS['text_ghost']};
+    }}
+    QRadioButton {{
+        color: {COLORS['text_dim']};
+        font-size: 14px;
+        padding: 10px 0px;
+        spacing: 14px;
+        background: transparent;
+    }}
+    QRadioButton:checked {{
+        color: {COLORS['text']};
+    }}
+    QRadioButton::indicator {{
+        width: 14px;
+        height: 14px;
+        border-radius: 7px;
+        border: 1px solid {COLORS['border']};
+        background: transparent;
+    }}
+    QRadioButton::indicator:checked {{
+        background: {COLORS['accent']};
+        border-color: {COLORS['accent']};
+    }}
+    QRadioButton::indicator:hover {{
+        border-color: {COLORS['text_dim']};
+    }}
+    QCheckBox {{
+        color: {COLORS['text']};
+        font-size: 14px;
+        spacing: 14px;
+        background: transparent;
+    }}
+    QCheckBox::indicator {{
+        width: 14px;
+        height: 14px;
+        border-radius: 2px;
+        border: 1px solid {COLORS['border']};
+        background: transparent;
+    }}
+    QCheckBox::indicator:checked {{
+        background: {COLORS['accent']};
+        border-color: {COLORS['accent']};
+    }}
+    QProgressBar {{
+        background-color: {COLORS['surface']};
+        border: none;
+        border-radius: 1px;
+        max-height: 2px;
+        text-align: center;
+    }}
+    QProgressBar::chunk {{
+        background-color: {COLORS['accent']};
+        border-radius: 1px;
+    }}
+    QScrollArea {{
+        background: transparent;
+        border: none;
+    }}
+    QScrollBar:vertical {{
+        background: transparent;
+        width: 4px;
+        margin: 0;
+    }}
+    QScrollBar::handle:vertical {{
+        background: {COLORS['border']};
+        border-radius: 2px;
+        min-height: 20px;
+    }}
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+        height: 0;
+    }}
+"""
+
+# ── GPU utils ──────────────────────────────────────────────────────────────────
 def _detect_cpu_vendor():
     result = subprocess.run("grep -m1 'vendor_id' /proc/cpuinfo", shell=True, capture_output=True, text=True)
     return "amd" if "AuthenticAMD" in result.stdout else "intel"
@@ -29,7 +238,6 @@ def _get_gpus():
     return gpus
 
 def _resolve_gpu_auto(gpu_choice, ask_fn=None):
-    """Resuelve la GPU. Si hay ambigüedad, llama a ask_fn(gpus) -> índice."""
     gpus = _get_gpus()
     if not gpus or gpu_choice == "none":
         return None
@@ -46,16 +254,12 @@ def _resolve_gpu_auto(gpu_choice, ask_fn=None):
     if gpu_choice == "auto":
         if len(gpus) <= 1:
             return None
-        # Siempre preguntar si hay más de una — el usuario sabe qué quiere
         if ask_fn:
             idx = ask_fn(gpus)
             return gpus[idx][0], gpus[idx][1], gpus[idx][2]
         return gpus[-1][0], gpus[-1][1], gpus[-1][2]
     return None
 
-
-
-# ── Purpose packages ─────────────────────────────────
 def purpose_packages(purpose):
     pkgs = []
     if purpose in ("everyday", "everything"):
@@ -68,139 +272,85 @@ def purpose_packages(purpose):
         pkgs += ["steam", "lutris", "wine", "winetricks", "gamemode"]
     return " ".join(pkgs)
 
-# ── Wagashi palette ──────────────────────────────────
-COLORS = {
-    "bg":          "#000000",
-    "surface":     "#0d0d0d",
-    "text":        "#ffffff",
-    "text_dim":    "#555555",
-    "accent":      "#e8a0a0",
-    "accent_dim":  "#8a5050",
-    "coral":       "#cd5c5c",
-}
+# ── Base page ──────────────────────────────────────────────────────────────────
+class BasePage(QWidget):
+    def __init__(self, window):
+        super().__init__()
+        self.window = window
+        self._outer = QVBoxLayout(self)
+        self._outer.setContentsMargins(0, 0, 0, 0)
+        self._outer.setSpacing(0)
 
-STYLE = f"""
-    QWidget {{
-        background-color: {COLORS['bg']};
-        color: {COLORS['text']};
-        font-family: 'Noto Sans';
-        font-size: 15px;
-    }}
-    QLabel {{
-        background: transparent;
-    }}
-    QLabel#title {{
-        font-size: 28px;
-        color: {COLORS['text']};
-        font-weight: 300;
-    }}
-    QLabel#subtitle {{
-        font-size: 14px;
-        color: {COLORS['text_dim']};
-        letter-spacing: 1px;
-    }}
-    QLabel#section {{
-        font-size: 13px;
-        color: {COLORS['text_dim']};
-        letter-spacing: 2px;
-    }}
-    QPushButton#primary {{
-        background-color: {COLORS['accent']};
-        color: #000000;
-        border: none;
-        border-radius: 4px;
-        padding: 12px 32px;
-        font-size: 14px;
-        font-weight: 500;
-    }}
-    QPushButton#primary:hover {{
-        background-color: #f0b0b0;
-    }}
-    QPushButton#secondary {{
-        background-color: transparent;
-        color: {COLORS['text_dim']};
-        border: 1px solid #222222;
-        border-radius: 4px;
-        padding: 12px 32px;
-        font-size: 14px;
-    }}
-    QPushButton#secondary:hover {{
-        color: {COLORS['text']};
-        border-color: #444444;
-    }}
-    QLineEdit {{
-        background-color: #111111;
-        color: {COLORS['text']};
-        border: none;
-        border-bottom: 1px solid #333333;
-        border-radius: 0px;
-        padding: 10px 4px;
-        font-size: 15px;
-    }}
-    QLineEdit:focus {{
-        border-bottom: 1px solid {COLORS['accent']};
-    }}
-    QRadioButton {{
-        color: {COLORS['text_dim']};
-        font-size: 14px;
-        padding: 8px 0px;
-        spacing: 12px;
-    }}
-    QRadioButton:checked {{
-        color: {COLORS['text']};
-    }}
-    QRadioButton::indicator {{
-        width: 16px;
-        height: 16px;
-        border-radius: 8px;
-        border: 1px solid #444444;
-        background: transparent;
-    }}
-    QRadioButton::indicator:checked {{
-        background: {COLORS['accent']};
-        border-color: {COLORS['accent']};
-    }}
-    QCheckBox {{
-        color: {COLORS['text']};
-        font-size: 14px;
-        spacing: 12px;
-    }}
-    QCheckBox::indicator {{
-        width: 16px;
-        height: 16px;
-        border-radius: 3px;
-        border: 1px solid #444444;
-        background: transparent;
-    }}
-    QCheckBox::indicator:checked {{
-        background: {COLORS['accent']};
-        border-color: {COLORS['accent']};
-    }}
-    QProgressBar {{
-        background-color: #111111;
-        border: none;
-        border-radius: 2px;
-        height: 3px;
-        text-align: center;
-    }}
-    QProgressBar::chunk {{
-        background-color: {COLORS['accent']};
-        border-radius: 2px;
-    }}
-"""
+        # Centered column — max 640px
+        self._center = QWidget()
+        self._center.setMaximumWidth(640)
+        self.layout = QVBoxLayout(self._center)
+        self.layout.setContentsMargins(0, 80, 0, 60)
+        self.layout.setSpacing(0)
 
+        wrap = QHBoxLayout()
+        wrap.addStretch()
+        wrap.addWidget(self._center)
+        wrap.addStretch()
 
+        self._outer.addLayout(wrap)
+
+    def add_title(self, text):
+        label = QLabel(text)
+        label.setObjectName("title")
+        label.setWordWrap(True)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(label)
+        self.layout.addSpacing(12)
+
+    def add_subtitle(self, text):
+        label = QLabel(text)
+        label.setObjectName("subtitle")
+        label.setWordWrap(True)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(label)
+        self.layout.addSpacing(48)
+
+    def add_section(self, text):
+        label = QLabel(text.upper())
+        label.setObjectName("section")
+        label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.layout.addWidget(label)
+        self.layout.addSpacing(12)
+
+    def add_divider(self):
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setStyleSheet(f"color: {COLORS['border']}; background: {COLORS['border']}; max-height: 1px;")
+        self.layout.addWidget(line)
+        self.layout.addSpacing(32)
+
+    def add_nav(self, back=True, next_text="Continue", next_fn=None):
+        self.layout.addStretch()
+        self.layout.addSpacing(40)
+        row = QHBoxLayout()
+        if back:
+            btn_back = QPushButton("← back")
+            btn_back.setObjectName("secondary")
+            btn_back.clicked.connect(self.window.prev_page)
+            row.addWidget(btn_back)
+        row.addStretch()
+        btn_next = QPushButton(next_text)
+        btn_next.setObjectName("primary")
+        btn_next.clicked.connect(next_fn or self.window.next_page)
+        row.addWidget(btn_next)
+        self.layout.addLayout(row)
+
+# ── Window ─────────────────────────────────────────────────────────────────────
 class HikaruWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Hikaru")
         self.setMinimumSize(900, 600)
         self.setStyleSheet(STYLE)
-
         self.data = {}
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
-
         self.pages = [
             WelcomePage(self),
             NetworkPage(self),
@@ -215,141 +365,93 @@ class HikaruWindow(QMainWindow):
             InstallPage(self),
             DonePage(self),
         ]
-
         for page in self.pages:
             self.stack.addWidget(page)
-
         self.stack.setCurrentIndex(0)
 
     def next_page(self):
-        current = self.stack.currentIndex()
-        if current < len(self.pages) - 1:
-            self.stack.setCurrentIndex(current + 1)
+        i = self.stack.currentIndex()
+        if i < len(self.pages) - 1:
+            self.stack.setCurrentIndex(i + 1)
 
     def prev_page(self):
-        current = self.stack.currentIndex()
-        if current > 0:
-            self.stack.setCurrentIndex(current - 1)
+        i = self.stack.currentIndex()
+        if i > 0:
+            self.stack.setCurrentIndex(i - 1)
 
-    def go_to(self, index):
-        self.stack.setCurrentIndex(index)
-
-
-class BasePage(QWidget):
-    def __init__(self, window):
-        super().__init__()
-        self.window = window
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(120, 80, 120, 80)
-        self.layout.setSpacing(0)
-
-    def add_title(self, text):
-        label = QLabel(text)
-        label.setObjectName("title")
-        label.setWordWrap(True)
-        self.layout.addWidget(label)
-        self.layout.addSpacing(8)
-
-    def add_subtitle(self, text):
-        label = QLabel(text)
-        label.setObjectName("subtitle")
-        label.setWordWrap(True)
-        self.layout.addWidget(label)
-        self.layout.addSpacing(40)
-
-    def add_section(self, text):
-        label = QLabel(text.upper())
-        label.setObjectName("section")
-        self.layout.addWidget(label)
-        self.layout.addSpacing(16)
-
-    def add_nav(self, back=True, next_text="Continue", next_fn=None):
-        self.layout.addStretch()
-        row = QHBoxLayout()
-        if back:
-            btn_back = QPushButton("← Back")
-            btn_back.setObjectName("secondary")
-            btn_back.clicked.connect(self.window.prev_page)
-            row.addWidget(btn_back)
-        row.addStretch()
-        btn_next = QPushButton(next_text)
-        btn_next.setObjectName("primary")
-        btn_next.clicked.connect(next_fn or self.window.next_page)
-        row.addWidget(btn_next)
-        self.layout.addLayout(row)
-
-
+# ── Pages ──────────────────────────────────────────────────────────────────────
 class WelcomePage(BasePage):
     def __init__(self, window):
         super().__init__(window)
         self.layout.addStretch()
 
-        dango = QLabel("🍡")
-        dango.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dango.setStyleSheet("font-size: 64px; background: transparent;")
-        self.layout.addWidget(dango)
+        edition_label = QLabel("Wagashi Linux")
+        edition_label.setObjectName("section")
+        edition_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(edition_label)
         self.layout.addSpacing(32)
 
         title = QLabel("Hikaru")
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("font-size: 36px; font-weight: 300; background: transparent;")
+        title.setStyleSheet(f"font-family: '{COLORS['font_title']}'; font-size: 56px; font-weight: 300; color: {COLORS['text']}; background: transparent;")
         self.layout.addWidget(title)
-        self.layout.addSpacing(8)
+        self.layout.addSpacing(16)
 
         subtitle = QLabel("Light of the sky.")
         subtitle.setObjectName("subtitle")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(subtitle)
-        self.layout.addSpacing(8)
+        self.layout.addSpacing(4)
 
-        tagline = QLabel("Let's set things up properly.")
+        tagline = QLabel("Let's set things up.")
         tagline.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        tagline.setStyleSheet("color: #333333; font-size: 13px; background: transparent;")
+        tagline.setStyleSheet(f"color: {COLORS['text_ghost']}; font-size: 13px; background: transparent;")
         self.layout.addWidget(tagline)
 
         self.layout.addStretch()
-        self.add_nav(back=False, next_text="Let's begin")
+        self.add_nav(back=False, next_text="begin")
 
 
 class NetworkPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Let's check your connection.")
+        self.add_title("Connection.")
         self.add_subtitle("Wagashi needs internet to download packages.")
         self.layout.addStretch()
 
-        self.status = QLabel("Checking...")
-        self.status.setStyleSheet(f"color: {COLORS['text_dim']}; background: transparent;")
+        self.status = QLabel("checking...")
+        self.status.setObjectName("subtitle")
+        self.status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.status)
-        self.layout.addStretch()
 
+        self.layout.addStretch()
         self.add_nav()
-        QTimer.singleShot(500, self.check)
+        QTimer.singleShot(600, self.check)
 
     def check(self):
         result = subprocess.run("ping -c 1 -W 1 1.1.1.1", shell=True, capture_output=True)
         if result.returncode == 0:
-            self.status.setText("✦ You're connected. Good.")
-            self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent;")
+            self.status.setText("connected.")
+            self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent; font-size: 14px;")
         else:
-            self.status.setText("✦ No connection found. You can continue, but installation may fail.")
-            self.status.setStyleSheet(f"color: {COLORS['coral']}; background: transparent;")
+            self.status.setText("no connection found.\nyou can continue, but installation may fail.")
+            self.status.setStyleSheet(f"color: {COLORS['error']}; background: transparent; font-size: 14px;")
 
 
 class UserPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Now, let's talk about you.")
+        self.add_title("Who are you?")
         self.add_subtitle("Just a few basics.")
 
-        self.add_section("Username")
+        self.add_section("username")
         self.username = QLineEdit()
         self.username.setPlaceholderText("lowercase, no spaces")
         self.layout.addWidget(self.username)
-        self.layout.addSpacing(24)
+        self.layout.addSpacing(32)
 
-        self.add_section("Password")
+        self.add_section("password")
         self.password = QLineEdit()
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
         self.password.setPlaceholderText("something you'll remember")
@@ -360,16 +462,17 @@ class UserPage(BasePage):
         self.password2.setEchoMode(QLineEdit.EchoMode.Password)
         self.password2.setPlaceholderText("again")
         self.layout.addWidget(self.password2)
-        self.layout.addSpacing(24)
+        self.layout.addSpacing(32)
 
-        self.add_section("Computer name")
+        self.add_section("computer name")
         self.hostname = QLineEdit()
         self.hostname.setPlaceholderText("wagashi")
         self.layout.addWidget(self.hostname)
 
         self.error = QLabel("")
-        self.error.setStyleSheet(f"color: {COLORS['coral']}; background: transparent;")
-        self.layout.addSpacing(12)
+        self.error.setObjectName("error")
+        self.error.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addSpacing(16)
         self.layout.addWidget(self.error)
 
         self.add_nav(next_fn=self.validate)
@@ -378,17 +481,15 @@ class UserPage(BasePage):
         u = self.username.text().strip()
         p = self.password.text()
         p2 = self.password2.text()
-
         if not u or not u.replace("-", "").replace("_", "").isalnum() or u[0].isdigit():
-            self.error.setText("✦ Lowercase only — it's a Linux thing, not us being difficult.")
+            self.error.setText("lowercase only. it's a linux thing, not us being difficult.")
             return
         if not p:
-            self.error.setText("✦ You'll need a password.")
+            self.error.setText("you'll need a password.")
             return
         if p != p2:
-            self.error.setText("✦ Those don't match.")
+            self.error.setText("those don't match.")
             return
-
         self.window.data["username"] = u
         self.window.data["password"] = p
         self.window.data["hostname"] = self.hostname.text().strip() or "wagashi"
@@ -399,7 +500,7 @@ class UserPage(BasePage):
 class KeyboardPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("What keyboard layout are you using?")
+        self.add_title("Keyboard.")
         self.add_subtitle("We'll set it up so everything just works.")
 
         options = [
@@ -410,7 +511,7 @@ class KeyboardPage(BasePage):
             ("de",        "German",         ""),
             ("it",        "Italian",        ""),
             ("pt-latin1", "Portuguese",     ""),
-            ("other",     "Other",          "I'll configure it manually later"),
+            ("other",     "Other",          "I'll configure it later"),
         ]
 
         self.buttons = {}
@@ -421,10 +522,9 @@ class KeyboardPage(BasePage):
             self.buttons[key] = rb
             self.layout_group.addButton(rb, i)
             row.addWidget(rb)
-
             text = QVBoxLayout()
             l1 = QLabel(label)
-            l1.setStyleSheet("font-size: 15px; color: #ffffff; background: transparent;")
+            l1.setStyleSheet(f"font-size: 14px; color: {COLORS['text']}; background: transparent;")
             text.addWidget(l1)
             if desc:
                 l2 = QLabel(desc)
@@ -436,22 +536,17 @@ class KeyboardPage(BasePage):
             self.layout.addSpacing(4)
 
         self.buttons["us"].setChecked(True)
-
         self.other_input = QLineEdit()
-        self.other_input.setPlaceholderText("layout code (e.g. dvorak, colemak)")
+        self.other_input.setPlaceholderText("layout code  (e.g. dvorak, colemak)")
         self.other_input.setVisible(False)
         self.layout.addWidget(self.other_input)
         self.buttons["other"].toggled.connect(self.other_input.setVisible)
-
         self.add_nav(next_fn=self.save)
 
     def save(self):
         for key, btn in self.buttons.items():
             if btn.isChecked():
-                if key == "other":
-                    self.window.data["keyboard"] = self.other_input.text().strip() or "us"
-                else:
-                    self.window.data["keyboard"] = key
+                self.window.data["keyboard"] = self.other_input.text().strip() or "us" if key == "other" else key
                 break
         self.window.next_page()
 
@@ -459,7 +554,7 @@ class KeyboardPage(BasePage):
 class TimezonePage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Roughly, where are you?")
+        self.add_title("Where are you?")
         self.add_subtitle("We'll set your clock accordingly.")
 
         continents = {
@@ -468,7 +563,7 @@ class TimezonePage(BasePage):
             "Asia":      "Asia",
             "Africa":    "Africa",
             "Australia": "Australia / Oceania",
-            "UTC":       "I don't know — keep it simple (UTC)",
+            "UTC":       "Somewhere simple  (UTC)",
         }
 
         self.continent_group = QButtonGroup()
@@ -481,18 +576,16 @@ class TimezonePage(BasePage):
             self.layout.addSpacing(4)
 
         self.continent_buttons["Europe"].setChecked(True)
-
-        self.layout.addSpacing(24)
-        self.add_section("City")
+        self.layout.addSpacing(32)
+        self.add_section("city")
         self.city_input = QLineEdit()
-        self.city_input.setPlaceholderText("Madrid, London, New_York, Tokyo...")
+        self.city_input.setPlaceholderText("Madrid · London · New_York · Tokyo")
         self.layout.addWidget(self.city_input)
 
-        note = QLabel("Leave empty to use UTC.")
-        note.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 12px; background: transparent;")
+        note = QLabel("leave empty for UTC")
+        note.setStyleSheet(f"color: {COLORS['text_ghost']}; font-size: 12px; background: transparent;")
         self.layout.addSpacing(8)
         self.layout.addWidget(note)
-
         self.add_nav(next_fn=self.save)
 
     def save(self):
@@ -511,16 +604,16 @@ class TimezonePage(BasePage):
 class PurposePage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("What's this computer going to be for?")
+        self.add_title("What's this for?")
         self.add_subtitle("We'll set things up accordingly.")
 
         options = [
-            ("everyday",        "Everyday life",      "browsing, watching things, maybe some work.\nnothing fancy. just reliable."),
-            ("creative",        "Creative work",       "design, video, music, photo.\nyou make things. your tools should keep up."),
-            ("dev",             "Development",         "code, servers, containers, experiments.\nthe computer is the project."),
-            ("gaming",          "Gaming",              "games, compatibility, performance.\nyou know what you want."),
-            ("gaming_creative", "Gaming + Creative",   "both. because why choose.\n(it's a perfectly reasonable way to live)"),
-            ("everything",      "Everything",          "just put it all in. I'll sort it out later.\n(no judgment)"),
+            ("everyday",        "Everyday",          "browsing, media, work. nothing fancy. just reliable."),
+            ("creative",        "Creative",           "design, video, music, photo. your tools should keep up."),
+            ("dev",             "Development",        "code, servers, containers. the computer is the project."),
+            ("gaming",          "Gaming",             "games, compatibility, performance. you know what you want."),
+            ("gaming_creative", "Gaming + Creative",  "both. because why choose."),
+            ("everything",      "Everything",         "put it all in. I'll sort it out later."),
         ]
 
         self.buttons = {}
@@ -529,10 +622,9 @@ class PurposePage(BasePage):
             rb = QRadioButton()
             self.buttons[key] = rb
             row.addWidget(rb)
-
             text = QVBoxLayout()
             l1 = QLabel(label)
-            l1.setStyleSheet("font-size: 15px; color: #ffffff; background: transparent;")
+            l1.setStyleSheet(f"font-size: 14px; color: {COLORS['text']}; background: transparent;")
             l2 = QLabel(desc)
             l2.setStyleSheet(f"font-size: 12px; color: {COLORS['text_dim']}; background: transparent;")
             text.addWidget(l1)
@@ -556,7 +648,7 @@ class PurposePage(BasePage):
 class DiskPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Let's find a home for Wagashi.")
+        self.add_title("Where should Wagashi live?")
         self.add_subtitle("Everything on the selected disk will be replaced.")
 
         self.disk_group = QButtonGroup()
@@ -564,7 +656,7 @@ class DiskPage(BasePage):
 
         disks = self.get_disks()
         for i, (name, size, model) in enumerate(disks):
-            rb = QRadioButton(f"/dev/{name}  —  {size}  —  {model}")
+            rb = QRadioButton(f"/dev/{name}   {size}   {model}")
             if i == 0:
                 rb.setChecked(True)
             self.disk_group.addButton(rb, i)
@@ -572,29 +664,36 @@ class DiskPage(BasePage):
             self.layout.addWidget(rb)
             self.layout.addSpacing(4)
 
-        self.layout.addSpacing(32)
-        self.add_section("Setup")
-
+        self.layout.addSpacing(40)
+        self.add_section("setup")
         self.layout_group = QButtonGroup()
         for i, (key, label, desc) in enumerate([
             ("simple",    "Simple",    "everything together. easy and works great."),
             ("separated", "Separated", "home folder gets its own space. good if you reinstall often."),
             ("encrypted", "Encrypted", "everything locked with a password. maximum privacy."),
         ]):
-            rb = QRadioButton(f"{label} — {desc}")
+            row = QHBoxLayout()
+            rb = QRadioButton()
             if i == 0:
                 rb.setChecked(True)
             self.layout_group.addButton(rb, i)
-            self.layout.addWidget(rb)
-            self.layout.addSpacing(4)
+            row.addWidget(rb)
+            text = QVBoxLayout()
+            l1 = QLabel(label)
+            l1.setStyleSheet(f"font-size: 14px; color: {COLORS['text']}; background: transparent;")
+            l2 = QLabel(desc)
+            l2.setStyleSheet(f"font-size: 12px; color: {COLORS['text_dim']}; background: transparent;")
+            text.addWidget(l1)
+            text.addWidget(l2)
+            row.addLayout(text)
+            row.addStretch()
+            self.layout.addLayout(row)
+            self.layout.addSpacing(8)
 
         self.add_nav(next_fn=self.save)
 
     def get_disks(self):
-        result = subprocess.run(
-            "lsblk -d -o NAME,SIZE,MODEL,TYPE | grep disk",
-            shell=True, capture_output=True, text=True
-        )
+        result = subprocess.run("lsblk -d -o NAME,SIZE,MODEL,TYPE | grep disk", shell=True, capture_output=True, text=True)
         disks = []
         for line in result.stdout.strip().split("\n"):
             parts = line.split()
@@ -616,17 +715,18 @@ class DiskPage(BasePage):
 class VirtualizationPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Ushio — virtualization.")
+        self.add_title("Ushio.")
         self.add_subtitle("Run other operating systems inside Wagashi.\nOptional, but powerful.")
 
-        self.enable_vm = QRadioButton("Yes — set up virtualization for me")
+        self.enable_vm  = QRadioButton("Yes — set up virtualization for me")
         self.disable_vm = QRadioButton("No — I don't need VMs")
         self.disable_vm.setChecked(True)
         self.layout.addWidget(self.enable_vm)
         self.layout.addWidget(self.disable_vm)
-        self.layout.addSpacing(32)
+        self.layout.addSpacing(40)
 
         self.gpu_section = QWidget()
+        self.gpu_section.setStyleSheet("background: transparent;")
         gpu_layout = QVBoxLayout(self.gpu_section)
         gpu_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -636,9 +736,9 @@ class VirtualizationPage(BasePage):
         gpu_layout.addSpacing(16)
 
         self.gpu_nvidia = QRadioButton("My passthrough GPU is NVIDIA")
-        self.gpu_amd   = QRadioButton("My passthrough GPU is AMD")
-        self.gpu_auto  = QRadioButton("I don't know — find out for me")
-        self.gpu_none  = QRadioButton("I don't want GPU passthrough")
+        self.gpu_amd    = QRadioButton("My passthrough GPU is AMD")
+        self.gpu_auto   = QRadioButton("Find out for me")
+        self.gpu_none   = QRadioButton("No passthrough")
         self.gpu_none.setChecked(True)
 
         for rb in [self.gpu_nvidia, self.gpu_amd, self.gpu_auto, self.gpu_none]:
@@ -648,20 +748,15 @@ class VirtualizationPage(BasePage):
         self.gpu_section.setVisible(False)
         self.layout.addWidget(self.gpu_section)
         self.enable_vm.toggled.connect(lambda checked: self.gpu_section.setVisible(checked))
-
         self.add_nav(next_fn=self.save)
 
     def save(self):
         self.window.data["virtualization"] = self.enable_vm.isChecked()
         if self.enable_vm.isChecked():
-            if self.gpu_nvidia.isChecked():
-                self.window.data["gpu_passthrough"] = "nvidia"
-            elif self.gpu_amd.isChecked():
-                self.window.data["gpu_passthrough"] = "amd"
-            elif self.gpu_auto.isChecked():
-                self.window.data["gpu_passthrough"] = "auto"
-            else:
-                self.window.data["gpu_passthrough"] = "none"
+            if self.gpu_nvidia.isChecked():   self.window.data["gpu_passthrough"] = "nvidia"
+            elif self.gpu_amd.isChecked():    self.window.data["gpu_passthrough"] = "amd"
+            elif self.gpu_auto.isChecked():   self.window.data["gpu_passthrough"] = "auto"
+            else:                             self.window.data["gpu_passthrough"] = "none"
         self.window.next_page()
 
 
@@ -669,7 +764,7 @@ class SecurityPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
         self.add_title("A few more things.")
-        self.add_subtitle("Security and updates. Sensible defaults already selected.")
+        self.add_subtitle("Security and updates.")
         self.layout.addSpacing(16)
 
         self.firewall = QCheckBox("Enable firewall  —  recommended for most people.")
@@ -680,11 +775,10 @@ class SecurityPage(BasePage):
         self.updates = QCheckBox("Check for updates automatically.")
         self.updates.setChecked(True)
         self.layout.addWidget(self.updates)
-
         self.add_nav(next_fn=self.save)
 
     def save(self):
-        self.window.data["firewall"] = self.firewall.isChecked()
+        self.window.data["firewall"]     = self.firewall.isChecked()
         self.window.data["auto_updates"] = self.updates.isChecked()
         self.window.next_page()
 
@@ -695,50 +789,46 @@ class SummaryPage(BasePage):
         self.add_title("Here's the plan.")
         self.add_subtitle("Everything on that disk will be replaced with Wagashi Linux.")
 
-        self.summary_label = QLabel()
-        self.summary_label.setStyleSheet(
-            f"color: {COLORS['text_dim']}; font-size: 14px; background: transparent;"
-        )
-        self.layout.addWidget(self.summary_label)
-        self.add_nav(next_text="Let's go", next_fn=self.confirm)
+        self.summary = QLabel()
+        self.summary.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 14px; background: transparent; line-height: 200%;")
+        self.summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(self.summary)
+        self.add_nav(next_text="let's go", next_fn=self.window.next_page)
 
     def showEvent(self, event):
         d = self.window.data
-        self.summary_label.setText(f"""
-  User          {d.get('username', '—')}
-  Computer      {d.get('hostname', '—')}
-  Keyboard      {d.get('keyboard', 'us')}
-  Timezone      {d.get('timezone', 'UTC')}
-  Disk          {d.get('disk', '—')}
-  Setup         {d.get('layout', '—')}
-  Purpose       {d.get('purpose', '—')}
-  Firewall      {'yes' if d.get('firewall') else 'no'}
-  Auto-update   {'yes' if d.get('auto_updates') else 'no'}
-  Ushio         {'yes' if d.get('virtualization') else 'no'}
-        """)
-
-    def confirm(self):
-        self.window.next_page()
+        rows = [
+            ("user",        d.get("username", "—")),
+            ("computer",    d.get("hostname",  "—")),
+            ("keyboard",    d.get("keyboard",  "us")),
+            ("timezone",    d.get("timezone",  "UTC")),
+            ("disk",        d.get("disk",      "—")),
+            ("setup",       d.get("layout",    "—")),
+            ("purpose",     d.get("purpose",   "—")),
+            ("firewall",    "yes" if d.get("firewall")      else "no"),
+            ("updates",     "yes" if d.get("auto_updates")  else "no"),
+            ("ushio",       "yes" if d.get("virtualization") else "no"),
+        ]
+        lines = "\n".join(f"{k:<14}{v}" for k, v in rows)
+        self.summary.setText(lines)
 
 
 class InstallWorker(QThread):
     status_changed = pyqtSignal(str, int)
-    log_line = pyqtSignal(str)
-    finished = pyqtSignal()
+    log_line       = pyqtSignal(str)
+    finished       = pyqtSignal()
 
     def __init__(self, data):
         super().__init__()
         self.data = data
 
-    def run_cmd(self, cmd, check=False):
+    def run_cmd(self, cmd):
         self.log_line.emit(f"$ {cmd}")
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        if result.stdout.strip():
-            for line in result.stdout.strip().split("\n"):
-                self.log_line.emit(line)
-        if result.stderr.strip():
-            for line in result.stderr.strip().split("\n"):
-                self.log_line.emit(f"[err] {line}")
+        for line in result.stdout.strip().split("\n"):
+            if line: self.log_line.emit(line)
+        for line in result.stderr.strip().split("\n"):
+            if line: self.log_line.emit(f"[err] {line}")
         return result
 
     def status(self, msg, pct):
@@ -746,7 +836,7 @@ class InstallWorker(QThread):
         self.log_line.emit(f"── {msg}")
 
     def run(self):
-        d = self.data
+        d         = self.data
         disk      = d["disk"]
         disk_name = d["disk_name"]
         is_nvme   = "nvme" in disk_name
@@ -755,7 +845,7 @@ class InstallWorker(QThread):
         part_home = f"{disk}p3" if is_nvme else f"{disk}3"
         timezone  = d.get("timezone", "UTC")
         keyboard  = d.get("keyboard", "us")
-        layout    = d.get("layout", "simple")
+        layout    = d.get("layout",   "simple")
 
         self.status("Making room for Wagashi.", 5)
         self.run_cmd(f"wipefs -af {disk}")
@@ -776,7 +866,7 @@ class InstallWorker(QThread):
         else:
             self.run_cmd(f"parted -s {disk} mkpart root ext4 513MiB 100%")
 
-        self.status("Clearing the space. A blank page.", 15)
+        self.status("A blank page.", 15)
         self.run_cmd(f"mkfs.fat -F32 {part_efi}")
         self.run_cmd(f"mkfs.ext4 -F {part_root}")
 
@@ -786,13 +876,13 @@ class InstallWorker(QThread):
         if layout == "separated":
             self.run_cmd(f"mount --mkdir {part_home} /mnt/home")
 
-        self.status("Installing Wagashi Linux. This is the slow part — go get a coffee.", 25)
+        self.status("Installing Wagashi Linux. This is the slow part.", 25)
         base = (
             "base linux-zen linux-firmware sudo networkmanager grub efibootmgr "
             "zsh nano git curl wget htop unzip tar man-db "
             "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
-            "mesa noto-fonts noto-fonts-emoji ttf-liberation "
-            "plasma sddm python-pyqt6 plymouth"
+            "mesa noto-fonts noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
+            "plasma sddm python-pyqt6 plymouth konsole"
         )
         extra = purpose_packages(d.get("purpose", "everyday"))
         self.run_cmd(f"pacstrap /mnt {base} {extra}".strip())
@@ -817,37 +907,20 @@ class InstallWorker(QThread):
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
         self.run_cmd("mkdir -p /mnt/boot/grub/themes/wagashi")
         self.run_cmd("cp -r /usr/share/grub/themes/wagashi/. /mnt/boot/grub/themes/wagashi/")
-
         with open("/mnt/etc/default/grub", "w") as f:
-            f.write(
-                'GRUB_DEFAULT=0\n'
-                'GRUB_TIMEOUT=5\n'
-                'GRUB_DISTRIBUTOR=""\n'
-                'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\n'
-                'GRUB_CMDLINE_LINUX=""\n'
-                'GRUB_THEME="/boot/grub/themes/wagashi/theme.txt"\n'
-                'GRUB_GFXMODE="1920x1080,auto"\n'
-                'GRUB_GFXPAYLOAD_LINUX=keep\n'
-            )
-
+            f.write('GRUB_DEFAULT=0\nGRUB_TIMEOUT=5\nGRUB_DISTRIBUTOR=""\nGRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\nGRUB_CMDLINE_LINUX=""\nGRUB_THEME="/boot/grub/themes/wagashi/theme.txt"\nGRUB_GFXMODE="1920x1080,auto"\nGRUB_GFXPAYLOAD_LINUX=keep\n')
+        self.run_cmd("sync")
         self.run_cmd("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
-
-        # Sobreescribir theme.txt DESPUÉS de grub-mkconfig — sin PNGs
         with open("/mnt/boot/grub/themes/wagashi/theme.txt", "w") as tf:
             tf.write('# Wagashi Linux GRUB Theme\n# Silence is a design choice.\n\ntitle-text: ""\ndesktop-color: "#000000"\n\n+ label {\n  left = 50%-300\n  top = 38%\n  width = 600\n  height = 40\n  text = "Wagashi Linux"\n  font = "wagashi-36.pf2"\n  color = "#ffffff"\n  align = "center"\n}\n\n+ label {\n  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n  text = "your computer, always yours."\n  font = "wagashi-14.pf2"\n  color = "#333333"\n  align = "center"\n}\n\n+ boot_menu {\n  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n  item_font = "wagashi-14.pf2"\n  item_color = "#444444"\n  selected_item_color = "#e8a0a0"\n  selected_item_style = "bold"\n  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n  scrollbar = false\n}\n')
 
+        self.status("Copying wallpapers.", 86)
+        self.run_cmd("mkdir -p /mnt/usr/share/wagashi/wallpapers")
+        self.run_cmd("cp -r /usr/share/wagashi/wallpapers/. /mnt/usr/share/wagashi/wallpapers/")
+
         self.status("Making it ours.", 87)
         with open("/mnt/etc/os-release", "w") as f:
-            f.write(
-                'NAME="Wagashi Linux"\n'
-                'PRETTY_NAME="Wagashi Linux"\n'
-                'ID=wagashi\n'
-                'ID_LIKE=arch\n'
-                'BUILD_ID=rolling\n'
-                'ANSI_COLOR="1;35"\n'
-                'HOME_URL="https://wagashi.rednek.org"\n'
-                'LOGO=wagashi\n'
-            )
+            f.write('NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux"\nID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\nHOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n')
         with open("/mnt/etc/motd", "w") as f:
             f.write("Welcome to Wagashi Linux.\nYour computer, always yours.\n")
 
@@ -857,11 +930,9 @@ class InstallWorker(QThread):
         with open("/mnt/etc/mkinitcpio.conf", "w") as f:
             f.write('HOOKS=(base udev plymouth autodetect microcode modconf kms block filesystems keyboard fsck)\n')
         self.run_cmd("arch-chroot /mnt plymouth-set-default-theme wagashi")
-
-        self.status("Packing everything for the first boot.", 91)
         self.run_cmd("arch-chroot /mnt mkinitcpio -P")
 
-        self.status("Installing dango. The package manager, not the snack.", 93)
+        self.status("Installing dango.", 93)
         self.run_cmd("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
         self.run_cmd("chmod +x /mnt/usr/local/bin/dango")
 
@@ -872,7 +943,7 @@ class InstallWorker(QThread):
         self.run_cmd("arch-chroot /mnt systemctl enable cups")
 
         if d.get("firewall"):
-            self.status("Closing the windows. The unnecessary ones.", 95)
+            self.status("Closing the unnecessary windows.", 95)
             self.run_cmd("pacstrap /mnt ufw")
             self.run_cmd("arch-chroot /mnt systemctl enable ufw")
             self.run_cmd("arch-chroot /mnt ufw --force enable")
@@ -884,7 +955,7 @@ class InstallWorker(QThread):
             self.run_cmd(f"arch-chroot /mnt usermod -aG libvirt {d['username']}")
             self._setup_passthrough(d.get("gpu_passthrough", "none"))
 
-        self.status("Done. That wasn't so bad.", 100)
+        self.status("Done.", 100)
         self.finished.emit()
 
     def _setup_passthrough(self, gpu_choice):
@@ -892,41 +963,29 @@ class InstallWorker(QThread):
             return
         result = _resolve_gpu_auto(gpu_choice)
         if result is None:
-            self.log_line.emit("✦ Ushio — only one GPU found, skipping passthrough.")
             return
         pci_addr, vendor, device_id = result
         cpu = _detect_cpu_vendor()
         iommu_param = "amd_iommu=on" if cpu == "amd" else "intel_iommu=on"
-
-        self.status(f"Ushio — opening the door for the second GPU.", 98)
         with open("/mnt/etc/default/grub", "r") as f:
             grub = f.read()
         if iommu_param not in grub:
-            grub = grub.replace(
-                'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"',
-                f'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash {iommu_param} iommu=pt"'
-            )
+            grub = grub.replace('GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"', f'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash {iommu_param} iommu=pt"')
             with open("/mnt/etc/default/grub", "w") as f:
                 f.write(grub)
-
         with open("/mnt/etc/modprobe.d/vfio.conf", "w") as f:
             f.write(f"options vfio-pci ids={device_id}\n")
             if vendor == "nvidia":
                 f.write("softdep nvidia pre: vfio vfio_pci\n")
                 f.write("softdep nouveau pre: vfio vfio_pci\n")
-
         with open("/mnt/etc/mkinitcpio.conf", "r") as f:
             mk = f.read()
         if "vfio_pci" not in mk:
-            mk = "MODULES=(vfio_pci vfio vfio_iommu_type1)\n" + mk
             with open("/mnt/etc/mkinitcpio.conf", "w") as f:
-                f.write(mk)
-
+                f.write("MODULES=(vfio_pci vfio vfio_iommu_type1)\n" + mk)
         if vendor == "nvidia":
             with open("/mnt/etc/modprobe.d/nvidia-vfio.conf", "w") as f:
-                f.write("options kvm ignore_msrs=1\n")
-                f.write("options kvm report_ignored_msrs=0\n")
-
+                f.write("options kvm ignore_msrs=1\noptions kvm report_ignored_msrs=0\n")
         self.run_cmd("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
         self.run_cmd("arch-chroot /mnt mkinitcpio -P")
 
@@ -934,25 +993,24 @@ class InstallWorker(QThread):
 class InstallPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.layout.setContentsMargins(60, 40, 60, 40)
-        self.add_title("Installing Wagashi Linux.")
-        self.add_subtitle("This will take a few minutes. (this is the slow part)")
+        self.add_title("Installing.")
+        self.add_subtitle("This will take a few minutes.")
 
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
         self.layout.addWidget(self.progress)
+        self.layout.addSpacing(24)
+
+        self.status = QLabel("starting...")
+        self.status.setObjectName("accent")
+        self.status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addWidget(self.status)
         self.layout.addSpacing(16)
 
-        self.status = QLabel("✦ Starting...")
-        self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent;")
-        self.layout.addWidget(self.status)
-        self.layout.addSpacing(12)
-
         self.recent = QLabel("")
-        self.recent.setStyleSheet(
-            f"color: {COLORS['text_dim']}; font-size: 12px; background: transparent;"
-        )
+        self.recent.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 12px; background: transparent;")
+        self.recent.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.recent.setWordWrap(True)
         self.layout.addWidget(self.recent)
         self.layout.addStretch()
@@ -970,11 +1028,10 @@ class InstallPage(BasePage):
         self.worker.start()
 
     def update_status(self, msg, pct):
-        self.status.setText(f"✦ {msg}")
+        self.status.setText(msg)
         self.progress.setValue(pct)
 
     def append_log(self, line):
-        # Solo mostrar líneas de paso (──), no comandos ni output raw
         if line.startswith("── "):
             self._recent_lines.append(line[3:])
             if len(self._recent_lines) > 3:
@@ -987,32 +1044,27 @@ class DonePage(BasePage):
         super().__init__(window)
         self.layout.addStretch()
 
-        dango = QLabel("🍡")
-        dango.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dango.setStyleSheet("font-size: 48px; background: transparent;")
-        self.layout.addWidget(dango)
-        self.layout.addSpacing(32)
-
-        title = QLabel("Done.")
+        title = QLabel("done.")
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet(f"font-family: '{COLORS['font_title']}'; font-size: 56px; font-weight: 300; color: {COLORS['accent']}; background: transparent;")
         self.layout.addWidget(title)
-        self.layout.addSpacing(12)
+        self.layout.addSpacing(24)
 
         self.username_label = QLabel("")
-        self.username_label.setObjectName("subtitle")
         self.username_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.username_label.setStyleSheet(f"color: {COLORS['text']}; font-size: 18px; background: transparent;")
         self.layout.addWidget(self.username_label)
-        self.layout.addSpacing(8)
+        self.layout.addSpacing(12)
 
-        tagline = QLabel("Your computer, always yours.")
+        tagline = QLabel("your computer, always yours.")
         tagline.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        tagline.setStyleSheet("color: #333333; font-size: 13px; background: transparent;")
+        tagline.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 13px; background: transparent;")
         self.layout.addWidget(tagline)
 
         self.layout.addStretch()
 
-        btn = QPushButton("Reboot")
+        btn = QPushButton("reboot")
         btn.setObjectName("primary")
         btn.clicked.connect(lambda: subprocess.run("reboot", shell=True))
         btn_layout = QHBoxLayout()
@@ -1023,7 +1075,7 @@ class DonePage(BasePage):
 
     def showEvent(self, event):
         username = self.window.data.get("username", "")
-        self.username_label.setText(f"Welcome home, {username}.")
+        self.username_label.setText(f"welcome home, {username}.")
 
 
 if __name__ == "__main__":
