@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Set Wagashi Wallpaper
+Exec=plasma-apply-wallpaperimage /usr/share/wagashi/wallpapers/Monochrome.png
+X-KDE-autostart-phase=2

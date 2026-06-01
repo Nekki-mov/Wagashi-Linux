@@ -902,6 +902,16 @@ class InstallWorker(QThread):
         self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {d['username']}")
         self.run_cmd(f"echo '{d['username']}:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
+        self.run_cmd(f"mkdir -p /mnt/home/{d['username']}/.config/autostart")
+        self.run_cmd(f"mkdir -p /mnt/home/{d['username']}/.config/autostart")
+        self.run_cmd(f"mkdir -p /mnt/home/{d['username']}/.config/autostart")
+        self.run_cmd(f"cp /etc/skel/.config/autostart/wagashi-firstrun.desktop /mnt/home/{d['username']}/.config/autostart/")
+        self.run_cmd(f"chown -R {d['username']}:{d['username']} /mnt/home/{d['username']}/.config")
+        wallpaper_conf = "[Containments][1][Wallpaper][org.kde.image][General]\nImage=file:///usr/share/wagashi/wallpapers/Monochrome.png\n"
+        with open(f"/mnt/home/{d['username']}/.config/plasma-org.kde.plasma.desktop-appletsrc", "w") as f:
+        f.write(wallpaper_conf)
+        self.run_cmd(f"chown {d['username']}:{d['username']} /mnt/home/{d['username']}/.config/plasma-org.kde.plasma.desktop-appletsrc")
+        self.run_cmd(f"chown -R {d['username']}:{d['username']} /mnt/home/{d['username']}/.config")
 
         self.status("Telling the computer how to wake up.", 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
@@ -917,6 +927,10 @@ class InstallWorker(QThread):
         self.status("Copying wallpapers.", 86)
         self.run_cmd("mkdir -p /mnt/usr/share/wagashi/wallpapers")
         self.run_cmd("cp -r /usr/share/wagashi/wallpapers/. /mnt/usr/share/wagashi/wallpapers/")
+        self.run_cmd("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
+        self.run_cmd("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
+        self.run_cmd("mkdir -p /mnt/etc/skel/.config/autostart")
+        self.run_cmd("cp /etc/skel/.config/autostart/wagashi-firstrun.desktop /mnt/etc/skel/.config/autostart/")
 
         self.status("Making it ours.", 87)
         with open("/mnt/etc/os-release", "w") as f:
