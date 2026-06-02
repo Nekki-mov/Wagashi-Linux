@@ -9,6 +9,7 @@ import re as _re
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
+from hikaru_strings import STRINGS
 
 # ── Edition detection ─────────────────────────────────────────────────────────
 def detect_edition():
@@ -82,16 +83,9 @@ STYLE = f"""
         border: none;
         outline: none;
     }}
-    QMainWindow {{
-        background-color: {COLORS['bg']};
-    }}
-    QStackedWidget {{
-        background-color: {COLORS['bg']};
-    }}
-    QLabel {{
-        background: transparent;
-        border: none;
-    }}
+    QMainWindow {{ background-color: {COLORS['bg']}; }}
+    QStackedWidget {{ background-color: {COLORS['bg']}; }}
+    QLabel {{ background: transparent; border: none; }}
     QLabel#title {{
         font-family: '{COLORS['font_title']}';
         font-size: 32px;
@@ -109,14 +103,8 @@ STYLE = f"""
         color: {COLORS['text_ghost']};
         letter-spacing: 3px;
     }}
-    QLabel#accent {{
-        color: {COLORS['accent']};
-        font-size: 14px;
-    }}
-    QLabel#error {{
-        color: {COLORS['error']};
-        font-size: 13px;
-    }}
+    QLabel#accent {{ color: {COLORS['accent']}; font-size: 14px; }}
+    QLabel#error  {{ color: {COLORS['error']};  font-size: 13px; }}
     QPushButton#primary {{
         background-color: {COLORS['accent']};
         color: #000000;
@@ -127,12 +115,8 @@ STYLE = f"""
         font-weight: 600;
         letter-spacing: 1px;
     }}
-    QPushButton#primary:hover {{
-        background-color: {COLORS['accent_hover']};
-    }}
-    QPushButton#primary:pressed {{
-        background-color: {COLORS['accent_dark']};
-    }}
+    QPushButton#primary:hover  {{ background-color: {COLORS['accent_hover']}; }}
+    QPushButton#primary:pressed {{ background-color: {COLORS['accent_dark']}; }}
     QPushButton#secondary {{
         background-color: transparent;
         color: {COLORS['text_dim']};
@@ -142,9 +126,21 @@ STYLE = f"""
         font-size: 13px;
         letter-spacing: 1px;
     }}
-    QPushButton#secondary:hover {{
+    QPushButton#secondary:hover {{ color: {COLORS['text']}; border-color: {COLORS['text_dim']}; }}
+    QPushButton#lang {{
+        background-color: transparent;
+        color: {COLORS['text_dim']};
+        border: 1px solid {COLORS['border']};
+        border-radius: 2px;
+        padding: 16px 48px;
+        font-size: 16px;
+        letter-spacing: 1px;
+        min-width: 160px;
+    }}
+    QPushButton#lang:hover {{
         color: {COLORS['text']};
-        border-color: {COLORS['text_dim']};
+        border-color: {COLORS['accent']};
+        background-color: {COLORS['surface']};
     }}
     QLineEdit {{
         background-color: {COLORS['surface']};
@@ -156,13 +152,8 @@ STYLE = f"""
         font-size: 15px;
         selection-background-color: {COLORS['accent_dark']};
     }}
-    QLineEdit:focus {{
-        border-bottom: 1px solid {COLORS['accent']};
-        background-color: {COLORS['surface']};
-    }}
-    QLineEdit::placeholder {{
-        color: {COLORS['text_ghost']};
-    }}
+    QLineEdit:focus {{ border-bottom: 1px solid {COLORS['accent']}; background-color: {COLORS['surface']}; }}
+    QLineEdit::placeholder {{ color: {COLORS['text_ghost']}; }}
     QRadioButton {{
         color: {COLORS['text_dim']};
         font-size: 14px;
@@ -170,23 +161,15 @@ STYLE = f"""
         spacing: 14px;
         background: transparent;
     }}
-    QRadioButton:checked {{
-        color: {COLORS['text']};
-    }}
+    QRadioButton:checked {{ color: {COLORS['text']}; }}
     QRadioButton::indicator {{
-        width: 14px;
-        height: 14px;
+        width: 14px; height: 14px;
         border-radius: 7px;
         border: 1px solid {COLORS['border']};
         background: transparent;
     }}
-    QRadioButton::indicator:checked {{
-        background: {COLORS['accent']};
-        border-color: {COLORS['accent']};
-    }}
-    QRadioButton::indicator:hover {{
-        border-color: {COLORS['text_dim']};
-    }}
+    QRadioButton::indicator:checked {{ background: {COLORS['accent']}; border-color: {COLORS['accent']}; }}
+    QRadioButton::indicator:hover  {{ border-color: {COLORS['text_dim']}; }}
     QCheckBox {{
         color: {COLORS['text']};
         font-size: 14px;
@@ -194,16 +177,12 @@ STYLE = f"""
         background: transparent;
     }}
     QCheckBox::indicator {{
-        width: 14px;
-        height: 14px;
+        width: 14px; height: 14px;
         border-radius: 2px;
         border: 1px solid {COLORS['border']};
         background: transparent;
     }}
-    QCheckBox::indicator:checked {{
-        background: {COLORS['accent']};
-        border-color: {COLORS['accent']};
-    }}
+    QCheckBox::indicator:checked {{ background: {COLORS['accent']}; border-color: {COLORS['accent']}; }}
     QProgressBar {{
         background-color: {COLORS['surface']};
         border: none;
@@ -211,27 +190,11 @@ STYLE = f"""
         max-height: 2px;
         text-align: center;
     }}
-    QProgressBar::chunk {{
-        background-color: {COLORS['accent']};
-        border-radius: 1px;
-    }}
-    QScrollArea {{
-        background: transparent;
-        border: none;
-    }}
-    QScrollBar:vertical {{
-        background: transparent;
-        width: 4px;
-        margin: 0;
-    }}
-    QScrollBar::handle:vertical {{
-        background: {COLORS['border']};
-        border-radius: 2px;
-        min-height: 20px;
-    }}
-    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-        height: 0;
-    }}
+    QProgressBar::chunk {{ background-color: {COLORS['accent']}; border-radius: 1px; }}
+    QScrollArea {{ background: transparent; border: none; }}
+    QScrollBar:vertical {{ background: transparent; width: 4px; margin: 0; }}
+    QScrollBar::handle:vertical {{ background: {COLORS['border']}; border-radius: 2px; min-height: 20px; }}
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 """
 
 # ── GPU utils ──────────────────────────────────────────────────────────────────
@@ -243,8 +206,7 @@ def _get_gpus():
     result = subprocess.run("lspci -nn | grep -E 'VGA|3D|Display'", shell=True, capture_output=True, text=True)
     gpus = []
     for line in result.stdout.strip().split("\n"):
-        if not line:
-            continue
+        if not line: continue
         pci_addr = line.split()[0]
         vendor = "nvidia" if "NVIDIA" in line.upper() else "amd" if ("AMD" in line.upper() or "ATI" in line.upper()) else "other"
         match = _re.search(r'\[([0-9a-f]{4}:[0-9a-f]{4})\]', line)
@@ -254,21 +216,17 @@ def _get_gpus():
 
 def _resolve_gpu_auto(gpu_choice, ask_fn=None):
     gpus = _get_gpus()
-    if not gpus or gpu_choice == "none":
-        return None
+    if not gpus or gpu_choice == "none": return None
     if gpu_choice in ("nvidia", "amd"):
         candidates = [(a, v, d, l) for a, v, d, l in gpus if v == gpu_choice]
-        if not candidates:
-            return None
-        if len(candidates) == 1:
-            return candidates[0][0], candidates[0][1], candidates[0][2]
+        if not candidates: return None
+        if len(candidates) == 1: return candidates[0][0], candidates[0][1], candidates[0][2]
         if ask_fn:
             idx = ask_fn(candidates)
             return candidates[idx][0], candidates[idx][1], candidates[idx][2]
         return candidates[0][0], candidates[0][1], candidates[0][2]
     if gpu_choice == "auto":
-        if len(gpus) <= 1:
-            return None
+        if len(gpus) <= 1: return None
         if ask_fn:
             idx = ask_fn(gpus)
             return gpus[idx][0], gpus[idx][1], gpus[idx][2]
@@ -277,14 +235,10 @@ def _resolve_gpu_auto(gpu_choice, ask_fn=None):
 
 def purpose_packages(purpose):
     pkgs = []
-    if purpose in ("everyday", "everything"):
-        pkgs += ["firefox", "vlc"]
-    if purpose in ("creative", "gaming_creative", "everything"):
-        pkgs += ["krita", "kdenlive", "obs-studio", "inkscape"]
-    if purpose in ("dev", "everything"):
-        pkgs += ["code", "docker", "python", "nodejs", "npm"]
-    if purpose in ("gaming", "gaming_creative", "everything"):
-        pkgs += ["steam", "lutris", "wine", "winetricks", "gamemode"]
+    if purpose in ("everyday", "everything"):   pkgs += ["firefox", "vlc"]
+    if purpose in ("creative", "gaming_creative", "everything"): pkgs += ["krita", "kdenlive", "obs-studio", "inkscape"]
+    if purpose in ("dev", "everything"):         pkgs += ["code", "docker", "python", "nodejs", "npm"]
+    if purpose in ("gaming", "gaming_creative", "everything"):   pkgs += ["steam", "lutris", "wine", "winetricks", "gamemode"]
     return " ".join(pkgs)
 
 # ── Base page ──────────────────────────────────────────────────────────────────
@@ -295,18 +249,15 @@ class BasePage(QWidget):
         self._outer = QVBoxLayout(self)
         self._outer.setContentsMargins(0, 0, 0, 0)
         self._outer.setSpacing(0)
-
         self._center = QWidget()
         self._center.setMaximumWidth(640)
         self.layout = QVBoxLayout(self._center)
         self.layout.setContentsMargins(0, 80, 0, 60)
         self.layout.setSpacing(0)
-
         wrap = QHBoxLayout()
         wrap.addStretch()
         wrap.addWidget(self._center)
         wrap.addStretch()
-
         self._outer.addLayout(wrap)
 
     def add_title(self, text):
@@ -332,7 +283,8 @@ class BasePage(QWidget):
         self.layout.addWidget(label)
         self.layout.addSpacing(12)
 
-    def add_nav(self, back=True, next_text="Continue", next_fn=None):
+    def add_nav(self, back=True, next_text=None, next_fn=None):
+        T = self.window.T
         self.layout.addStretch()
         self.layout.addSpacing(40)
         row = QHBoxLayout()
@@ -342,7 +294,7 @@ class BasePage(QWidget):
             btn_back.clicked.connect(self.window.prev_page)
             row.addWidget(btn_back)
         row.addStretch()
-        btn_next = QPushButton(next_text)
+        btn_next = QPushButton(next_text or "Continue")
         btn_next.setObjectName("primary")
         btn_next.clicked.connect(next_fn or self.window.next_page)
         row.addWidget(btn_next)
@@ -356,9 +308,27 @@ class HikaruWindow(QMainWindow):
         self.setMinimumSize(900, 600)
         self.setStyleSheet(STYLE)
         self.data = {}
+        self.lang = "en"
+        self.T = STRINGS["en"]
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
-        self.pages = [
+
+        self.lang_page = LanguagePage(self)
+        self.stack.addWidget(self.lang_page)
+        self.main_pages = []
+        self.stack.setCurrentIndex(0)
+
+    def set_language(self, lang):
+        self.lang = lang
+        self.T = STRINGS[lang]
+        self.data["lang"] = lang
+        self._build_main_pages()
+        self.stack.setCurrentWidget(self.main_pages[0])
+
+    def _build_main_pages(self):
+        for page in self.main_pages:
+            self.stack.removeWidget(page)
+        self.main_pages = [
             WelcomePage(self),
             NetworkPage(self),
             UserPage(self),
@@ -372,24 +342,50 @@ class HikaruWindow(QMainWindow):
             InstallPage(self),
             DonePage(self),
         ]
-        for page in self.pages:
+        for page in self.main_pages:
             self.stack.addWidget(page)
-        self.stack.setCurrentIndex(0)
 
     def next_page(self):
-        i = self.stack.currentIndex()
-        if i < len(self.pages) - 1:
-            self.stack.setCurrentIndex(i + 1)
+        i = self.main_pages.index(self.stack.currentWidget()) if self.stack.currentWidget() in self.main_pages else -1
+        if i >= 0 and i < len(self.main_pages) - 1:
+            self.stack.setCurrentWidget(self.main_pages[i + 1])
 
     def prev_page(self):
-        i = self.stack.currentIndex()
+        i = self.main_pages.index(self.stack.currentWidget()) if self.stack.currentWidget() in self.main_pages else -1
         if i > 0:
-            self.stack.setCurrentIndex(i - 1)
+            self.stack.setCurrentWidget(self.main_pages[i - 1])
+
+# ── Language page ──────────────────────────────────────────────────────────────
+class LanguagePage(QWidget):
+    def __init__(self, window):
+        super().__init__()
+        self.window = window
+        outer = QVBoxLayout(self)
+        outer.addStretch()
+
+        center = QWidget()
+        center.setMaximumWidth(480)
+        layout = QVBoxLayout(center)
+        layout.setSpacing(16)
+
+        for lang_code, label in [("en", "English"), ("es", "Español"), ("ja", "日本語")]:
+            btn = QPushButton(label)
+            btn.setObjectName("lang")
+            btn.clicked.connect(lambda checked, lc=lang_code: self.window.set_language(lc))
+            layout.addWidget(btn)
+
+        wrap = QHBoxLayout()
+        wrap.addStretch()
+        wrap.addWidget(center)
+        wrap.addStretch()
+        outer.addLayout(wrap)
+        outer.addStretch()
 
 # ── Pages ──────────────────────────────────────────────────────────────────────
 class WelcomePage(BasePage):
     def __init__(self, window):
         super().__init__(window)
+        T = window.T
         self.layout.addStretch()
 
         edition_label = QLabel("Wagashi Linux")
@@ -398,20 +394,20 @@ class WelcomePage(BasePage):
         self.layout.addWidget(edition_label)
         self.layout.addSpacing(32)
 
-        title = QLabel("Hikaru")
+        title = QLabel(T["SPLASH_NAME"])
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet(f"font-family: '{COLORS['font_title']}'; font-size: 56px; font-weight: 300; color: {COLORS['text']}; background: transparent;")
         self.layout.addWidget(title)
         self.layout.addSpacing(16)
 
-        subtitle = QLabel("Light of the sky.")
+        subtitle = QLabel(T["SPLASH_SUBTITLE"])
         subtitle.setObjectName("subtitle")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(subtitle)
         self.layout.addSpacing(4)
 
-        tagline = QLabel("Let's set things up.")
+        tagline = QLabel(T["WELCOME_1"])
         tagline.setAlignment(Qt.AlignmentFlag.AlignCenter)
         tagline.setStyleSheet(f"color: {COLORS['text_ghost']}; font-size: 13px; background: transparent;")
         self.layout.addWidget(tagline)
@@ -423,8 +419,9 @@ class WelcomePage(BasePage):
 class NetworkPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
+        T = window.T
         self.add_title("Connection.")
-        self.add_subtitle("Wagashi needs internet to download packages.")
+        self.add_subtitle(T["NETWORK_CHECKING"])
         self.layout.addStretch()
 
         self.status = QLabel("checking...")
@@ -437,50 +434,51 @@ class NetworkPage(BasePage):
         QTimer.singleShot(600, self.check)
 
     def check(self):
+        T = self.window.T
         result = subprocess.run("ping -c 1 -W 1 1.1.1.1", shell=True, capture_output=True)
         if result.returncode == 0:
-            self.status.setText("✦ connected.")
+            self.status.setText(f"✦ {T['NETWORK_OK']}")
             if EDITION == "nayuki":
                 self.status.setStyleSheet(
                     f"color: {COLORS['accent_dark']};"
                     f"background: {COLORS['surface']};"
                     f"font-size: 15px; font-weight: 600;"
-                    f"padding: 6px 18px;"
-                    f"border-radius: 8px;"
+                    f"padding: 6px 18px; border-radius: 8px;"
                 )
             else:
                 self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent; font-size: 14px;")
         else:
-            self.status.setText("no connection found.\nyou can continue, but installation may fail.")
+            self.status.setText(T["NETWORK_FAIL"])
             self.status.setStyleSheet(f"color: {COLORS['error']}; background: transparent; font-size: 14px;")
 
 
 class UserPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Who are you?")
-        self.add_subtitle("Just a few basics.")
+        T = window.T
+        self.add_title(T["USER_INTRO"])
+        self.add_subtitle(T["WELCOME_2"])
 
-        self.add_section("username")
+        self.add_section(T["SUMMARY_USER"])
         self.username = QLineEdit()
-        self.username.setPlaceholderText("lowercase, no spaces")
+        self.username.setPlaceholderText(T["USER_USERNAME_RETRY"].lower())
         self.layout.addWidget(self.username)
         self.layout.addSpacing(32)
 
-        self.add_section("password")
+        self.add_section(T["USER_PASSWORD_PROMPT"])
         self.password = QLineEdit()
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password.setPlaceholderText("something you'll remember")
+        self.password.setPlaceholderText("••••••••")
         self.layout.addWidget(self.password)
         self.layout.addSpacing(12)
 
         self.password2 = QLineEdit()
         self.password2.setEchoMode(QLineEdit.EchoMode.Password)
-        self.password2.setPlaceholderText("again")
+        self.password2.setPlaceholderText(T["USER_PASSWORD_CONFIRM"])
         self.layout.addWidget(self.password2)
         self.layout.addSpacing(32)
 
-        self.add_section("computer name")
+        self.add_section(T["USER_HOSTNAME_PROMPT"])
         self.hostname = QLineEdit()
         self.hostname.setPlaceholderText("wagashi")
         self.layout.addWidget(self.hostname)
@@ -494,17 +492,18 @@ class UserPage(BasePage):
         self.add_nav(next_fn=self.validate)
 
     def validate(self):
+        T = self.window.T
         u = self.username.text().strip()
         p = self.password.text()
         p2 = self.password2.text()
         if not u or not u.replace("-", "").replace("_", "").isalnum() or u[0].isdigit():
-            self.error.setText("lowercase only. it's a linux thing, not us being difficult.")
+            self.error.setText(T["USER_USERNAME_ERROR"])
             return
         if not p:
-            self.error.setText("you'll need a password.")
+            self.error.setText(T["USER_PASSWORD_ERROR"])
             return
         if p != p2:
-            self.error.setText("those don't match.")
+            self.error.setText(T["USER_PASSWORD_ERROR"])
             return
         self.window.data["username"] = u
         self.window.data["password"] = p
@@ -516,18 +515,20 @@ class UserPage(BasePage):
 class KeyboardPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Keyboard.")
-        self.add_subtitle("We'll set it up so everything just works.")
+        T = window.T
+        self.add_title(T["KEYBOARD_ASK"])
+        self.add_subtitle("")
 
         options = [
-            ("us",        "US / English",   "default"),
-            ("es",        "Spanish",        ""),
-            ("uk",        "UK / British",   ""),
-            ("fr",        "French",         ""),
-            ("de",        "German",         ""),
-            ("it",        "Italian",        ""),
-            ("pt-latin1", "Portuguese",     ""),
-            ("other",     "Other",          "I'll configure it later"),
+            ("us",        T["KEYBOARD_US"],    ""),
+            ("es",        T["KEYBOARD_ES"],    ""),
+            ("uk",        T["KEYBOARD_UK"],    ""),
+            ("fr",        T["KEYBOARD_FR"],    ""),
+            ("de",        T["KEYBOARD_DE"],    ""),
+            ("it",        T["KEYBOARD_IT"],    ""),
+            ("pt-latin1", T["KEYBOARD_PT"],    ""),
+            ("jp106",     T["KEYBOARD_JA"],    ""),
+            ("other",     T["KEYBOARD_OTHER"], ""),
         ]
 
         self.buttons = {}
@@ -553,7 +554,7 @@ class KeyboardPage(BasePage):
 
         self.buttons["us"].setChecked(True)
         self.other_input = QLineEdit()
-        self.other_input.setPlaceholderText("layout code  (e.g. dvorak, colemak)")
+        self.other_input.setPlaceholderText(T["KEYBOARD_OTHER_PROMPT"])
         self.other_input.setVisible(False)
         self.layout.addWidget(self.other_input)
         self.buttons["other"].toggled.connect(self.other_input.setVisible)
@@ -570,16 +571,17 @@ class KeyboardPage(BasePage):
 class TimezonePage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Where are you?")
-        self.add_subtitle("We'll set your clock accordingly.")
+        T = window.T
+        self.add_title(T["TIMEZONE_ASK"])
+        self.add_subtitle("")
 
         continents = {
-            "Europe":    "Europe",
-            "America":   "Americas",
-            "Asia":      "Asia",
-            "Africa":    "Africa",
-            "Australia": "Australia / Oceania",
-            "UTC":       "Somewhere simple  (UTC)",
+            "Europe":    T["TIMEZONE_EUROPE"],
+            "America":   T["TIMEZONE_AMERICA"],
+            "Asia":      T["TIMEZONE_ASIA"],
+            "Africa":    T["TIMEZONE_AFRICA"],
+            "Australia": T["TIMEZONE_AUSTRALIA"],
+            "UTC":       T["TIMEZONE_UTC"],
         }
 
         self.continent_group = QButtonGroup()
@@ -593,15 +595,10 @@ class TimezonePage(BasePage):
 
         self.continent_buttons["Europe"].setChecked(True)
         self.layout.addSpacing(32)
-        self.add_section("city")
+        self.add_section(T["TIMEZONE_CITY_PROMPT"])
         self.city_input = QLineEdit()
-        self.city_input.setPlaceholderText("Madrid · London · New_York · Tokyo")
+        self.city_input.setPlaceholderText(T["TIMEZONE_CITY_EXAMPLES"])
         self.layout.addWidget(self.city_input)
-
-        note = QLabel("leave empty for UTC")
-        note.setStyleSheet(f"color: {COLORS['text_ghost']}; font-size: 12px; background: transparent;")
-        self.layout.addSpacing(8)
-        self.layout.addWidget(note)
         self.add_nav(next_fn=self.save)
 
     def save(self):
@@ -620,32 +617,29 @@ class TimezonePage(BasePage):
 class PurposePage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("What's this for?")
-        self.add_subtitle("We'll set things up accordingly.")
+        T = window.T
+        self.add_title(T["PURPOSE_ASK"])
+        self.add_subtitle("")
 
         options = [
-            ("everyday",        "Everyday",          "browsing, media, work. nothing fancy. just reliable."),
-            ("creative",        "Creative",           "design, video, music, photo. your tools should keep up."),
-            ("dev",             "Development",        "code, servers, containers. the computer is the project."),
-            ("gaming",          "Gaming",             "games, compatibility, performance. you know what you want."),
-            ("gaming_creative", "Gaming + Creative",  "both. because why choose."),
-            ("everything",      "Everything",         "put it all in. I'll sort it out later."),
+            ("everyday",        T["PURPOSE_EVERYDAY"]),
+            ("creative",        T["PURPOSE_CREATIVE"]),
+            ("dev",             T["PURPOSE_DEV"]),
+            ("gaming",          T["PURPOSE_GAMING"]),
+            ("gaming_creative", T["PURPOSE_GAMING_CREATIVE"]),
+            ("everything",      T["PURPOSE_EVERYTHING"]),
         ]
 
         self.buttons = {}
-        for key, label, desc in options:
+        for key, desc in options:
             row = QHBoxLayout()
             rb = QRadioButton()
             self.buttons[key] = rb
             row.addWidget(rb)
-            text = QVBoxLayout()
-            l1 = QLabel(label)
-            l1.setStyleSheet(f"font-size: 14px; color: {COLORS['text']}; background: transparent;")
-            l2 = QLabel(desc)
-            l2.setStyleSheet(f"font-size: 12px; color: {COLORS['text_dim']}; background: transparent;")
-            text.addWidget(l1)
-            text.addWidget(l2)
-            row.addLayout(text)
+            l1 = QLabel(desc)
+            l1.setWordWrap(True)
+            l1.setStyleSheet(f"font-size: 14px; color: {COLORS['text_dim']}; background: transparent;")
+            row.addWidget(l1)
             row.addStretch()
             self.layout.addLayout(row)
             self.layout.addSpacing(8)
@@ -664,8 +658,9 @@ class PurposePage(BasePage):
 class DiskPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Where should Wagashi live?")
-        self.add_subtitle("Everything on the selected disk will be replaced.")
+        T = window.T
+        self.add_title(T["DISK_INTRO"])
+        self.add_subtitle(T["SUMMARY_WARNING"])
 
         self.disk_group = QButtonGroup()
         self.disk_buttons = []
@@ -681,12 +676,12 @@ class DiskPage(BasePage):
             self.layout.addSpacing(4)
 
         self.layout.addSpacing(40)
-        self.add_section("setup")
+        self.add_section(T["SUMMARY_SETUP"])
         self.layout_group = QButtonGroup()
         for i, (key, label, desc) in enumerate([
-            ("simple",    "Simple",    "everything together. easy and works great."),
-            ("separated", "Separated", "home folder gets its own space. good if you reinstall often."),
-            ("encrypted", "Encrypted", "everything locked with a password. maximum privacy."),
+            ("simple",    T["LAYOUT_SIMPLE"],    ""),
+            ("separated", T["LAYOUT_SEPARATED"], ""),
+            ("encrypted", T["LAYOUT_ENCRYPTED"], ""),
         ]):
             row = QHBoxLayout()
             rb = QRadioButton()
@@ -694,14 +689,10 @@ class DiskPage(BasePage):
                 rb.setChecked(True)
             self.layout_group.addButton(rb, i)
             row.addWidget(rb)
-            text = QVBoxLayout()
             l1 = QLabel(label)
-            l1.setStyleSheet(f"font-size: 14px; color: {COLORS['text']}; background: transparent;")
-            l2 = QLabel(desc)
-            l2.setStyleSheet(f"font-size: 12px; color: {COLORS['text_dim']}; background: transparent;")
-            text.addWidget(l1)
-            text.addWidget(l2)
-            row.addLayout(text)
+            l1.setWordWrap(True)
+            l1.setStyleSheet(f"font-size: 14px; color: {COLORS['text_dim']}; background: transparent;")
+            row.addWidget(l1)
             row.addStretch()
             self.layout.addLayout(row)
             self.layout.addSpacing(8)
@@ -732,11 +723,14 @@ class DiskPage(BasePage):
 class VirtualizationPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
+        T = window.T
         self.add_title("Ushio.")
-        self.add_subtitle("Run other operating systems inside Wagashi.\nOptional, but powerful.")
+        self.add_subtitle(T["USHIO_ASK"])
 
-        self.enable_vm  = QRadioButton("Yes — set up virtualization for me")
-        self.disable_vm = QRadioButton("No — I don't need VMs")
+        self.enable_vm  = QRadioButton(T["USHIO_GPU_NVIDIA"].split("is")[0].strip() + " — " + T["SUMMARY_YES"])
+        self.disable_vm = QRadioButton("— " + T["SUMMARY_NO"])
+        self.enable_vm  = QRadioButton(T["SUMMARY_YES"])
+        self.disable_vm = QRadioButton(T["SUMMARY_NO"])
         self.disable_vm.setChecked(True)
         self.layout.addWidget(self.enable_vm)
         self.layout.addWidget(self.disable_vm)
@@ -747,15 +741,15 @@ class VirtualizationPage(BasePage):
         gpu_layout = QVBoxLayout(self.gpu_section)
         gpu_layout.setContentsMargins(0, 0, 0, 0)
 
-        gpu_label = QLabel("GPU PASSTHROUGH")
+        gpu_label = QLabel(T["USHIO_GPU_ASK"].upper())
         gpu_label.setObjectName("section")
         gpu_layout.addWidget(gpu_label)
         gpu_layout.addSpacing(16)
 
-        self.gpu_nvidia = QRadioButton("My passthrough GPU is NVIDIA")
-        self.gpu_amd    = QRadioButton("My passthrough GPU is AMD")
-        self.gpu_auto   = QRadioButton("Find out for me")
-        self.gpu_none   = QRadioButton("No passthrough")
+        self.gpu_nvidia = QRadioButton(T["USHIO_GPU_NVIDIA"])
+        self.gpu_amd    = QRadioButton(T["USHIO_GPU_AMD"])
+        self.gpu_auto   = QRadioButton(T["USHIO_GPU_AUTO"])
+        self.gpu_none   = QRadioButton(T["USHIO_GPU_NONE"])
         self.gpu_none.setChecked(True)
 
         for rb in [self.gpu_nvidia, self.gpu_amd, self.gpu_auto, self.gpu_none]:
@@ -780,16 +774,17 @@ class VirtualizationPage(BasePage):
 class SecurityPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("A few more things.")
-        self.add_subtitle("Security and updates.")
+        T = window.T
+        self.add_title(T["FIREWALL_ASK"])
+        self.add_subtitle("")
         self.layout.addSpacing(16)
 
-        self.firewall = QCheckBox("Enable firewall  —  recommended for most people.")
+        self.firewall = QCheckBox(T["FIREWALL_ASK"])
         self.firewall.setChecked(True)
         self.layout.addWidget(self.firewall)
         self.layout.addSpacing(16)
 
-        self.updates = QCheckBox("Keep Wagashi up to date automatically.")
+        self.updates = QCheckBox(T["UPDATES_ASK"])
         self.updates.setChecked(True)
         self.layout.addWidget(self.updates)
         self.add_nav(next_fn=self.save)
@@ -803,30 +798,34 @@ class SecurityPage(BasePage):
 class SummaryPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Here's the plan.")
-        self.add_subtitle("Everything on that disk will be replaced with Wagashi Linux.")
+        T = window.T
+        self.add_title(T["SUMMARY_TITLE"])
+        self.add_subtitle(T["SUMMARY_WARNING"])
 
         self.summary = QLabel()
         self.summary.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 14px; background: transparent; line-height: 200%;")
         self.summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.summary)
-        self.add_nav(next_text="let's go", next_fn=self.window.next_page)
+        self.add_nav(next_text=T["SUMMARY_CONFIRM"], next_fn=self.window.next_page)
 
     def showEvent(self, event):
+        T = self.window.T
         d = self.window.data
+        yes = T["SUMMARY_YES"]
+        no  = T["SUMMARY_NO"]
         rows = [
-            ("user",        d.get("username", "—")),
-            ("computer",    d.get("hostname",  "—")),
-            ("keyboard",    d.get("keyboard",  "us")),
-            ("timezone",    d.get("timezone",  "UTC")),
-            ("disk",        d.get("disk_label", d.get("disk", "—"))),
-            ("setup",       d.get("layout",    "—")),
-            ("purpose",     d.get("purpose",   "—")),
-            ("firewall",    "yes" if d.get("firewall")      else "no"),
-            ("updates",     "yes" if d.get("auto_updates")  else "no"),
-            ("ushio",       "run other operating systems inside Wagashi — " + ("yes" if d.get("virtualization") else "no")),
+            (T["SUMMARY_USER"],     d.get("username", "—")),
+            (T["SUMMARY_COMPUTER"], d.get("hostname",  "—")),
+            (T["SUMMARY_KEYBOARD"], d.get("keyboard",  "us")),
+            (T["SUMMARY_TIMEZONE"], d.get("timezone",  "UTC")),
+            (T["SUMMARY_DISK"],     d.get("disk_label", d.get("disk", "—"))),
+            (T["SUMMARY_SETUP"],    d.get("layout",    "—")),
+            (T["SUMMARY_PURPOSE"],  d.get("purpose",   "—")),
+            (T["SUMMARY_FIREWALL"], yes if d.get("firewall")     else no),
+            (T["SUMMARY_UPDATES"],  yes if d.get("auto_updates") else no),
+            (T["SUMMARY_USHIO"],    f"{T['SUMMARY_USHIO_DESC']} — {yes if d.get('virtualization') else no}"),
         ]
-        lines = "\n".join(f"{k:<14}{v}" for k, v in rows)
+        lines = "\n".join(f"{k:<18}{v}" for k, v in rows)
         self.summary.setText(lines)
 
 
@@ -839,7 +838,7 @@ class InstallWorker(QThread):
         super().__init__()
         self.data = data
 
-    def run_cmd(self, cmd):
+    def run_cmd(self, cmd, check=True):
         self.log_line.emit(f"$ {cmd}")
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         for line in result.stdout.strip().split("\n"):
@@ -849,16 +848,27 @@ class InstallWorker(QThread):
         return result
 
     def write_file(self, path, content):
-        """Write a file directly from Python — no shell heredoc issues."""
-        with open(path, "w") as f:
-            f.write(content)
+        try:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w") as f:
+                f.write(content)
+        except Exception as e:
+            self.log_line.emit(f"[err] write_file {path}: {e}")
 
     def status(self, msg, pct):
         self.status_changed.emit(msg, pct)
         self.log_line.emit(f"── {msg}")
 
     def run(self):
+        try:
+            self._run()
+        except Exception as e:
+            self.log_line.emit(f"[fatal] {e}")
+            self.status_changed.emit(f"Something went wrong: {e}", 0)
+
+    def _run(self):
         d         = self.data
+        T         = STRINGS.get(d.get("lang", "en"), STRINGS["en"])
         disk      = d["disk"]
         disk_name = d["disk_name"]
         is_nvme   = "nvme" in disk_name
@@ -869,9 +879,9 @@ class InstallWorker(QThread):
         keyboard  = d.get("keyboard", "us")
         layout    = d.get("layout",   "simple")
         username  = d["username"]
+        lang      = d.get("lang", "en")
 
-        # ── Disk ──────────────────────────────────────────────────────────────
-        self.status("Making room for Wagashi.", 5)
+        self.status(T["INSTALL_DISK"], 5)
         self.run_cmd(f"wipefs -af {disk}")
         self.run_cmd(f"parted -s {disk} mklabel gpt")
         self.run_cmd(f"parted -s {disk} mkpart ESP fat32 1MiB 513MiB")
@@ -883,216 +893,159 @@ class InstallWorker(QThread):
             self.run_cmd(f"mkfs.ext4 -F {part_home}")
         elif layout == "encrypted":
             self.run_cmd(f"parted -s {disk} mkpart root ext4 513MiB 100%")
-            self.status("Locking the door. You'll have the only key.", 10)
+            self.status(T["LAYOUT_ENCRYPT_INTRO"], 10)
             self.run_cmd(f"cryptsetup luksFormat {part_root}")
             self.run_cmd(f"cryptsetup open {part_root} wagashi_crypt")
             part_root = "/dev/mapper/wagashi_crypt"
         else:
             self.run_cmd(f"parted -s {disk} mkpart root ext4 513MiB 100%")
 
-        self.status("A blank page.", 15)
+        self.status(T["INSTALL_FORMAT"], 15)
         self.run_cmd(f"mkfs.fat -F32 {part_efi}")
         self.run_cmd(f"mkfs.ext4 -F {part_root}")
 
-        self.status("Getting things in order.", 20)
+        self.status(T["INSTALL_MOUNT"], 20)
         self.run_cmd(f"mount {part_root} /mnt")
         self.run_cmd(f"mount --mkdir {part_efi} /mnt/boot/efi")
         if layout == "separated":
             self.run_cmd(f"mount --mkdir {part_home} /mnt/home")
 
-        # ── Packages ──────────────────────────────────────────────────────────
-        self.status("Installing Wagashi Linux. This is the slow part.", 25)
+        self.status(T["INSTALL_PACKAGES"], 25)
         base = (
             "base linux-zen linux-firmware sudo networkmanager grub efibootmgr "
             "zsh nano git curl wget htop unzip tar man-db "
             "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
-            "mesa noto-fonts noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
+            "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
             "lxqt openbox lightdm lightdm-gtk-greeter accountsservice "
-            "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs"
+            "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs gvfs"
         )
         extra = purpose_packages(d.get("purpose", "everyday"))
         self.run_cmd(f"pacstrap /mnt {base} {extra}".strip())
 
-        # ── System config ─────────────────────────────────────────────────────
-        self.status("Teaching the system where it is.", 70)
+        self.status(T["INSTALL_CONFIG"], 70)
         self.run_cmd("genfstab -U /mnt >> /mnt/etc/fstab")
         self.run_cmd(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
         self.run_cmd("arch-chroot /mnt hwclock --systohc")
         self.run_cmd(f"echo '{d['hostname']}' > /mnt/etc/hostname")
+        self.write_file("/mnt/etc/hosts",
+            f"127.0.0.1   localhost\n::1         localhost\n127.0.1.1   {d['hostname']}.localdomain {d['hostname']}\n"
+        )
         self.run_cmd("echo 'en_US.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
+        if lang == "ja":
+            self.run_cmd("echo 'ja_JP.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
         self.run_cmd("arch-chroot /mnt locale-gen")
-        self.run_cmd("echo 'LANG=en_US.UTF-8' > /mnt/etc/locale.conf")
+        locale = "ja_JP.UTF-8" if lang == "ja" else "es_ES.UTF-8" if lang == "es" else "en_US.UTF-8"
+        self.run_cmd(f"echo 'LANG={locale}' > /mnt/etc/locale.conf")
         if keyboard != "us":
             self.run_cmd(f"echo 'KEYMAP={keyboard}' > /mnt/etc/vconsole.conf")
 
-        # ── User ──────────────────────────────────────────────────────────────
-        self.status("Setting a place for you.", 78)
+        self.status(T["INSTALL_USER"], 78)
         self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
         self.run_cmd(f"echo '{username}:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
-        # ── User LXQt config ──────────────────────────────────────────────────
         home = f"/mnt/home/{username}"
         self.run_cmd(f"mkdir -p {home}/.config/autostart")
-
-        # wagashi-firstrun autostart
         self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
-            "[Desktop Entry]\n"
-            "Type=Application\n"
-            "Name=Wagashi First Run\n"
-            "Exec=/usr/local/bin/wagashi-firstrun\n"
-            "Icon=dialog-scripts\n"
-            "X-LXQT-Need-Tray=false\n"
+            "[Desktop Entry]\nType=Application\nName=Wagashi First Run\n"
+            "Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\nX-LXQT-Need-Tray=false\n"
         )
-
-        # easter eggs en zshrc
         self.write_file(f"{home}/.zshrc",
             'pierogi() { echo "O KURWA"; }\n'
-            'calçot() { echo "Did you know, Hatsune Miku was made by Catalonian people?'
-            ' Yeah, Miku was made by Pompeu Fabra University,'
-            " so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n"
+            "calçot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n"
         )
 
-        self.run_cmd(f"chown -R {username}:{username} {home}")
-
-        # ── /etc/hosts ────────────────────────────────────────────────────────
-        hostname = d.get("hostname", "wagashi")
-        self.write_file("/mnt/etc/hosts",
-            f"127.0.0.1   localhost\n"
-            f"::1         localhost\n"
-            f"127.0.1.1   {hostname}.localdomain {hostname}\n"
-        )
-
-        # ── Bootloader ────────────────────────────────────────────────────────
-        self.status("Telling the computer how to wake up.", 82)
+        self.status(T["INSTALL_BOOTLOADER"], 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
         self.run_cmd("mkdir -p /mnt/boot/grub/themes/wagashi")
         self.run_cmd("cp -r /usr/share/grub/themes/wagashi/. /mnt/boot/grub/themes/wagashi/")
         self.write_file("/mnt/etc/default/grub",
-            'GRUB_DEFAULT=0\n'
-            'GRUB_TIMEOUT=5\n'
-            'GRUB_DISTRIBUTOR=""\n'
-            'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\n'
-            'GRUB_CMDLINE_LINUX=""\n'
+            'GRUB_DEFAULT=0\nGRUB_TIMEOUT=5\nGRUB_DISTRIBUTOR=""\n'
+            'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\nGRUB_CMDLINE_LINUX=""\n'
             'GRUB_THEME="/boot/grub/themes/wagashi/theme.txt"\n'
-            'GRUB_GFXMODE="1920x1080,auto"\n'
-            'GRUB_GFXPAYLOAD_LINUX=keep\n'
+            'GRUB_GFXMODE="1920x1080,auto"\nGRUB_GFXPAYLOAD_LINUX=keep\n'
         )
         self.run_cmd("sync")
         self.run_cmd("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
         self.write_file("/mnt/boot/grub/themes/wagashi/theme.txt",
-            '# Wagashi Linux GRUB Theme\n'
-            '# Silence is a design choice.\n\n'
-            'title-text: ""\n'
-            'desktop-color: "#000000"\n\n'
-            '+ label {\n'
-            '  left = 50%-300\n  top = 38%\n  width = 600\n  height = 40\n'
-            '  text = "Wagashi Linux"\n'
-            '  font = "wagashi-36.pf2"\n'
-            '  color = "#ffffff"\n'
-            '  align = "center"\n}\n\n'
-            '+ label {\n'
-            '  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n'
-            '  text = "your computer, always yours."\n'
-            '  font = "wagashi-14.pf2"\n'
-            '  color = "#333333"\n'
-            '  align = "center"\n}\n\n'
-            '+ boot_menu {\n'
-            '  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n'
-            '  item_font = "wagashi-14.pf2"\n'
-            '  item_color = "#444444"\n'
-            '  selected_item_color = "#e8a0a0"\n'
-            '  selected_item_style = "bold"\n'
-            '  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n'
-            '  scrollbar = false\n}\n'
+            '# Wagashi Linux GRUB Theme\n# Silence is a design choice.\n\n'
+            'title-text: ""\ndesktop-color: "#000000"\n\n'
+            '+ label {\n  left = 50%-300\n  top = 38%\n  width = 600\n  height = 40\n'
+            '  text = "Wagashi Linux"\n  font = "wagashi-36.pf2"\n  color = "#ffffff"\n  align = "center"\n}\n\n'
+            '+ label {\n  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n'
+            '  text = "your computer, always yours."\n  font = "wagashi-14.pf2"\n  color = "#333333"\n  align = "center"\n}\n\n'
+            '+ boot_menu {\n  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n'
+            '  item_font = "wagashi-14.pf2"\n  item_color = "#444444"\n'
+            '  selected_item_color = "#e8a0a0"\n  selected_item_style = "bold"\n'
+            '  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n  scrollbar = false\n}\n'
         )
 
-        # ── Wagashi assets ────────────────────────────────────────────────────
-        self.status("Copying tools and setting things up.", 86)
+        self.status(T["INSTALL_BRANDING"], 86)
         self.run_cmd("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
         self.run_cmd("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
         self.run_cmd("cp /usr/local/bin/hikaru-gui /mnt/usr/local/bin/hikaru-gui")
         self.run_cmd("chmod +x /mnt/usr/local/bin/hikaru-gui")
         self.run_cmd("cp /usr/local/bin/hikaru /mnt/usr/local/bin/hikaru")
         self.run_cmd("chmod +x /mnt/usr/local/bin/hikaru")
+        self.run_cmd("cp /usr/local/bin/hikaru_strings.py /mnt/usr/local/bin/hikaru_strings.py")
 
-        # LightDM config en sistema instalado
         self.run_cmd("mkdir -p /mnt/etc/lightdm")
         self.write_file("/mnt/etc/lightdm/lightdm.conf",
-            "[LightDM]\n"
-            "allow-guest=false\n"
-            "\n"
-            "[Seat:*]\n"
-            "greeter-session=lightdm-gtk-greeter\n"
-            "session-wrapper=/etc/lightdm/Xsession\n"
+            "[LightDM]\nallow-guest=false\n\n[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nsession-wrapper=/etc/lightdm/Xsession\n"
         )
-        self.write_file("/mnt/etc/lightdm/Xsession",
-            "#!/bin/sh\n"
-            "xdg-user-dirs-update\n"
-            "exec startlxqt\n"
-        )
+        self.write_file("/mnt/etc/lightdm/Xsession", "#!/bin/sh\nxdg-user-dirs-update\nexec startlxqt\n")
         self.run_cmd("chmod 755 /mnt/etc/lightdm/Xsession")
 
-        # ── Branding ──────────────────────────────────────────────────────────
-        self.status("Making it ours.", 87)
         self.write_file("/mnt/etc/os-release",
-            'NAME="Wagashi Linux"\n'
-            'PRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n'
-            'ID=wagashi\n'
-            'ID_LIKE=arch\n'
-            'BUILD_ID=rolling\n'
-            'ANSI_COLOR="1;35"\n'
-            'HOME_URL="https://wagashi.rednek.org"\n'
-            'LOGO=wagashi\n'
+            'NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n'
+            'ID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\n'
+            'HOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n'
         )
-        self.write_file("/mnt/etc/motd",
-            "Welcome to Wagashi Linux — Nayuki (LXQt).\nYour computer, always yours.\n"
-        )
+        self.write_file("/mnt/etc/motd", "Welcome to Wagashi Linux — Nayuki (LXQt).\nYour computer, always yours.\n")
 
-        # ── Plymouth ──────────────────────────────────────────────────────────
-        self.status("Dressing the boot screen.", 89)
+        self.status(T["INSTALL_PLYMOUTH"], 88)
         self.run_cmd("mkdir -p /mnt/usr/share/plymouth/themes/wagashi")
         self.run_cmd("cp -r /usr/share/plymouth/themes/wagashi/. /mnt/usr/share/plymouth/themes/wagashi/")
         self.write_file("/mnt/etc/mkinitcpio.conf",
             "HOOKS=(base udev plymouth autodetect microcode modconf kms block filesystems keyboard fsck)\n"
         )
         self.run_cmd("arch-chroot /mnt plymouth-set-default-theme wagashi")
+
+        self.status(T["INSTALL_INITRAMFS"], 90)
         self.run_cmd("arch-chroot /mnt mkinitcpio -P")
 
-        # ── dango ─────────────────────────────────────────────────────────────
-        self.status("Installing dango.", 93)
+        self.status(T["INSTALL_DANGO"], 93)
         self.run_cmd("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
         self.run_cmd("chmod +x /mnt/usr/local/bin/dango")
 
-        # ── Services ──────────────────────────────────────────────────────────
-        self.status("Starting the things that should always be running.", 94)
+        self.status(T["INSTALL_SERVICES"], 94)
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")
         self.run_cmd("arch-chroot /mnt systemctl enable lightdm")
         self.run_cmd("arch-chroot /mnt systemctl enable bluetooth")
         self.run_cmd("arch-chroot /mnt systemctl enable cups")
+        self.run_cmd("arch-chroot /mnt systemctl --global enable gvfs-daemon", check=False)
 
         if d.get("firewall"):
-            self.status("Closing the unnecessary windows.", 95)
             self.run_cmd("pacstrap /mnt ufw")
             self.run_cmd("arch-chroot /mnt systemctl enable ufw")
             self.run_cmd("arch-chroot /mnt ufw --force enable")
 
         if d.get("virtualization"):
-            self.status("Preparing Ushio. Worlds within worlds.", 97)
+            self.status(T["USHIO_SETTING_UP"], 97)
             self.run_cmd("pacstrap /mnt qemu-full libvirt virt-manager dnsmasq")
             self.run_cmd("arch-chroot /mnt systemctl enable libvirtd")
             self.run_cmd(f"arch-chroot /mnt usermod -aG libvirt {username}")
             self._setup_passthrough(d.get("gpu_passthrough", "none"))
 
-        self.status("Done.", 100)
+        self.status(T["INSTALL_ALMOST"], 99)
+        self.run_cmd(f"chown -R {username}:{username} /mnt/home/{username}")
+        self.status(T["DONE_TITLE"], 100)
         self.finished.emit()
 
     def _setup_passthrough(self, gpu_choice):
-        if gpu_choice == "none":
-            return
+        if gpu_choice == "none": return
         result = _resolve_gpu_auto(gpu_choice)
-        if result is None:
-            return
+        if result is None: return
         pci_addr, vendor, device_id = result
         cpu = _detect_cpu_vendor()
         iommu_param = "amd_iommu=on" if cpu == "amd" else "intel_iommu=on"
@@ -1108,8 +1061,7 @@ class InstallWorker(QThread):
         with open("/mnt/etc/modprobe.d/vfio.conf", "w") as f:
             f.write(f"options vfio-pci ids={device_id}\n")
             if vendor == "nvidia":
-                f.write("softdep nvidia pre: vfio vfio_pci\n")
-                f.write("softdep nouveau pre: vfio vfio_pci\n")
+                f.write("softdep nvidia pre: vfio vfio_pci\nsoftdep nouveau pre: vfio vfio_pci\n")
         with open("/mnt/etc/mkinitcpio.conf", "r") as f:
             mk = f.read()
         if "vfio_pci" not in mk:
@@ -1125,8 +1077,9 @@ class InstallWorker(QThread):
 class InstallPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        self.add_title("Installing.")
-        self.add_subtitle("This will take a few minutes.")
+        T = window.T
+        self.add_title(T["INSTALL_START"].split(".")[0] + ".")
+        self.add_subtitle(T["INSTALL_PACKAGES"])
 
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
@@ -1174,9 +1127,10 @@ class InstallPage(BasePage):
 class DonePage(BasePage):
     def __init__(self, window):
         super().__init__(window)
+        T = window.T
         self.layout.addStretch()
 
-        title = QLabel("done.")
+        title = QLabel(T["DONE_TITLE"])
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         done_color = COLORS['text'] if EDITION == "nayuki" else COLORS['accent']
@@ -1190,15 +1144,15 @@ class DonePage(BasePage):
         self.layout.addWidget(self.username_label)
         self.layout.addSpacing(12)
 
-        tagline = QLabel("your computer, always yours.")
-        tagline.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        tagline.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 13px; background: transparent;")
-        self.layout.addWidget(tagline)
+        self.tagline_label = QLabel(T["DONE_TAGLINE"])
+        self.tagline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.tagline_label.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 13px; background: transparent;")
+        self.layout.addWidget(self.tagline_label)
 
         self.layout.addStretch()
 
         self.countdown = 10
-        self.reboot_btn = QPushButton(f"restart and enter Wagashi ({self.countdown})")
+        self.reboot_btn = QPushButton(f"{T['DONE_REBOOT']} ({self.countdown})")
         self.reboot_btn.setObjectName("primary")
         self.reboot_btn.clicked.connect(self.do_reboot)
         btn_layout = QHBoxLayout()
@@ -1209,22 +1163,26 @@ class DonePage(BasePage):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.tick)
-        self.timer.start(1000)
+        self._T = T
 
     def tick(self):
         self.countdown -= 1
         if self.countdown <= 0:
             self.do_reboot()
         else:
-            self.reboot_btn.setText(f"restart and enter Wagashi ({self.countdown})")
+            self.reboot_btn.setText(f"{self._T['DONE_REBOOT']} ({self.countdown})")
 
     def do_reboot(self):
         self.timer.stop()
         subprocess.run("reboot", shell=True)
 
     def showEvent(self, event):
+        T = self.window.T
         username = self.window.data.get("username", "")
-        self.username_label.setText(f"welcome home, {username}.")
+        self.username_label.setText(T["DONE_WELCOME"].format(username=username))
+        self.countdown = 10
+        self.reboot_btn.setText(f"{T['DONE_REBOOT']} ({self.countdown})")
+        self.timer.start(1000)
 
 
 if __name__ == "__main__":
