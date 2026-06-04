@@ -59,12 +59,13 @@ elif EDITION == "nayuki":
     }
 else:
     COLORS = {
-        "bg":           "#0e0e12",
-        "surface":      "#16161e",
-        "border":       "#2a2a3a",
-        "text":         "#ece6d8",
-        "text_dim":     "#6a6478",
-        "text_ghost":   "#2e2a38",
+        "bg":           "#060a12",
+        "card":         "#1a2540",
+        "surface":      "#1c2640",
+        "border":       "#2a3a55",
+        "text":         "#f0e8d8",
+        "text_dim":     "#8a9ab8",
+        "text_ghost":   "#6a7a9a",
         "accent":       "#d4a574",
         "accent_hover": "#e8bc8c",
         "accent_dark":  "#a87848",
@@ -107,31 +108,31 @@ STYLE = f"""
     QLabel#error  {{ color: {COLORS['error']};  font-size: 13px; }}
     QPushButton#primary {{
         background-color: {COLORS['accent']};
-        color: #000000;
+        color: #f0e8d8;
         border: none;
-        border-radius: 2px;
+        border-radius: 8px;
         padding: 12px 40px;
         font-size: 13px;
         font-weight: 600;
         letter-spacing: 1px;
     }}
-    QPushButton#primary:hover  {{ background-color: {COLORS['accent_hover']}; }}
-    QPushButton#primary:pressed {{ background-color: {COLORS['accent_dark']}; }}
+    QPushButton#primary:hover  {{ background-color: {COLORS['accent_hover']}; color: #f0e8d8; }}
+    QPushButton#primary:pressed {{ background-color: {COLORS['accent_dark']}; color: #f0e8d8; }}
     QPushButton#secondary {{
         background-color: transparent;
-        color: {COLORS['text_dim']};
+        color: {COLORS['text']};
         border: 1px solid {COLORS['border']};
-        border-radius: 2px;
+        border-radius: 8px;
         padding: 12px 40px;
         font-size: 13px;
         letter-spacing: 1px;
     }}
-    QPushButton#secondary:hover {{ color: {COLORS['text']}; border-color: {COLORS['text_dim']}; }}
+    QPushButton#secondary:hover {{ color: {COLORS['text']}; border-color: {COLORS['accent']}; }}
     QPushButton#lang {{
-        background-color: transparent;
-        color: {COLORS['text_dim']};
+        background-color: {COLORS['surface']};
+        color: {COLORS['text']};
         border: 1px solid {COLORS['border']};
-        border-radius: 2px;
+        border-radius: 8px;
         padding: 16px 48px;
         font-size: 16px;
         letter-spacing: 1px;
@@ -140,7 +141,7 @@ STYLE = f"""
     QPushButton#lang:hover {{
         color: {COLORS['text']};
         border-color: {COLORS['accent']};
-        background-color: {COLORS['surface']};
+        background-color: {COLORS['border']};
     }}
     QLineEdit {{
         background-color: {COLORS['surface']};
@@ -249,16 +250,42 @@ class BasePage(QWidget):
         self._outer = QVBoxLayout(self)
         self._outer.setContentsMargins(0, 0, 0, 0)
         self._outer.setSpacing(0)
+
+        # Card/pill — floats over the background
+        card_color = COLORS.get("card", COLORS["surface"])
+        self._card = QWidget()
+        self._card.setStyleSheet(
+            f"background-color: {card_color};"
+            f"border-radius: 20px;"
+        )
+        self._card.setMaximumWidth(760)
+        self._card.setMinimumWidth(580)
+
         self._center = QWidget()
         self._center.setMaximumWidth(640)
+        self._center.setStyleSheet("background: transparent;")
         self.layout = QVBoxLayout(self._center)
-        self.layout.setContentsMargins(0, 80, 0, 60)
+        self.layout.setContentsMargins(0, 60, 0, 48)
         self.layout.setSpacing(0)
+
+        card_inner = QHBoxLayout()
+        card_inner.addStretch()
+        card_inner.addWidget(self._center)
+        card_inner.addStretch()
+        card_layout = QVBoxLayout(self._card)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.addLayout(card_inner)
+
         wrap = QHBoxLayout()
         wrap.addStretch()
-        wrap.addWidget(self._center)
+        wrap.addWidget(self._card)
         wrap.addStretch()
-        self._outer.addLayout(wrap)
+
+        outer_wrap = QVBoxLayout()
+        outer_wrap.addStretch()
+        outer_wrap.addLayout(wrap)
+        outer_wrap.addStretch()
+        self._outer.addLayout(outer_wrap)
 
     def add_title(self, text):
         label = QLabel(text)
@@ -365,10 +392,17 @@ class LanguagePage(QWidget):
         outer = QVBoxLayout(self)
         outer.addStretch()
 
+        card_color = COLORS.get("card", COLORS["surface"])
+        card = QWidget()
+        card.setStyleSheet(f"background-color: {card_color}; border-radius: 20px;")
+        card.setMaximumWidth(400)
+
         center = QWidget()
-        center.setMaximumWidth(480)
+        center.setMaximumWidth(320)
+        center.setStyleSheet("background: transparent;")
         layout = QVBoxLayout(center)
         layout.setSpacing(16)
+        layout.setContentsMargins(0, 48, 0, 48)
 
         for lang_code, label, font in [
             ("en", "English",  COLORS['font_body']),
@@ -381,9 +415,17 @@ class LanguagePage(QWidget):
             btn.clicked.connect(lambda checked, lc=lang_code: self.window.set_language(lc))
             layout.addWidget(btn)
 
+        card_inner = QHBoxLayout()
+        card_inner.addStretch()
+        card_inner.addWidget(center)
+        card_inner.addStretch()
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.addLayout(card_inner)
+
         wrap = QHBoxLayout()
         wrap.addStretch()
-        wrap.addWidget(center)
+        wrap.addWidget(card)
         wrap.addStretch()
         outer.addLayout(wrap)
         outer.addStretch()
