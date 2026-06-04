@@ -1,81 +1,78 @@
-# Wagashi Linux — Monochrome Edition
-**The quiet one. Black, grey, and one color that matters.**
+# Wagashi Linux — Sayuri (Monochrome Edition)
 
-This is Wagashi Linux with KDE Plasma 6 on Wayland — stripped of noise,  
-built for people who find comfort in stillness.
+**2077. Technology as monochromatic art.**
+
+This is Wagashi Linux with KDE Plasma and a theme built around a single conviction:  
+that black, white, and every tone between them are enough.  
+More than enough.
+
+The only edition that looks like a future that hasn't arrived yet.
+
+---
+
+## The idea
+
+Color is information. Remove it, and what's left is form.  
+Contrast. Texture. Intention.
+
+Sayuri treats the desktop as a visual discipline —  
+every element earns its place not through color, but through weight, spacing, and light.  
+The result isn't a dark theme with the saturation drained out.  
+It's something designed from the beginning to exist without color.  
+And to feel complete doing it.
+
+Inspired by *Iroduku* and *Violet Evergarden*: the beauty in restraint, the weight of a single color.  
+Like the pink umbrella in the wallpaper — one color, exactly where it matters.
+
+This is technology as monochromatic art.  
+Quiet. Precise. Deliberately beautiful.
 
 ---
 
 ## What's here
 
-A complete, bootable Arch-based system with:
+Everything the KDE edition has, with one deliberate difference:  
+the visual palette is monochromatic from the ground up.
 
 - **linux-zen** kernel
-- **KDE Plasma 6** on Wayland
-- **SDDM** with the Monochrome wallpaper
-- **Hikaru** — a graphical installer that feels like arriving somewhere
-- **dango** — a package manager that talks like a person
-- **Ushio** — virtualization with GPU passthrough, configured at install time
-- **Plymouth** splash screen — the dango, OLED black, yours
-- **GRUB** with a custom Wagashi theme
-- **Bitstream Vera Sans** — because good type is invisible until it isn't
-- **Wagashi color scheme** — black, greys, white, and coral where it counts
+- **KDE Plasma 6** on Wayland — tuned for the monochrome aesthetic
+- **SDDM** as the display manager
+- **Hikaru GUI** — same guided installer, Monochrome palette — English, Spanish, and Japanese
+- **dango** — same package manager, same voice
+- **Plymouth** splash screen — dango, OLED black
+- **GRUB** with Wagashi theme
+- Bitstream Vera Sans — the typeface this edition was built around
+- Wallpaper: original art by Nekki.mov
 
 ---
 
-## What makes Monochrome different
+## The palette
 
-Everything is black. Not dark grey. Not navy. Black.  
-The only color is coral — #e8a0a0 — and it appears exactly where it needs to.  
-Selections. Focus. The things that matter.
+- Background: `#000000` — pure OLED black
+- Surfaces: `#111111` / `#1a1a1a`
+- Text: `#e8e8e8` — off-white
+- Accent: `#e8a0a0` — coral, used with intention
+- Borders: `#2a2a2a`
 
-The wallpaper is a girl with a pink umbrella walking a Japanese street at night.  
-Everything else is monochrome. She isn't.  
-That's the whole idea.
-
----
-
-## Installing
-
-Boot the ISO. Hikaru starts automatically.  
-It'll ask you a few questions. Nothing complicated.
-
-When it's done, it'll say: *Welcome home.*  
-That's it.
+One color. Exactly where it matters.
 
 ---
 
-## What Hikaru sets up
+## Why monochrome
 
-- User, password, hostname
-- Keyboard layout and timezone
-- Disk partitioning — simple, separated, or encrypted
-- Purpose-based package selection — everyday, creative, development, gaming, or everything
-- Ushio virtualization with optional GPU passthrough
-- Firewall
-- Plymouth, GRUB theme, branding — all of it
+Some people work better without color competing for attention.  
+Some people find it beautiful.  
+Some people find it both.
 
-You don't have to think about any of that. Hikaru does.
-
----
-
-## dango
-
-```bash
-sudo dango -S firefox        # install
-sudo dango -R firefox        # remove
-sudo dango -Syu              # update everything
-sudo dango -Ss firefox       # search
-```
-
-Pacman and AUR, unified. No Flatpak. Intentionally.
+None of those reasons need justification.  
+Wagashi Linux doesn't ask. It just works.
 
 ---
 
 ## Building
 
 ```bash
-git checkout monochrome
+git checkout Sayuri-Monochrome
 sudo mkarchiso -v -w ~/wagashi-work -o ~/wagashi-out ~/wagashi
 ```
 
