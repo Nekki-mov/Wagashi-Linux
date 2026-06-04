@@ -2,9 +2,11 @@
 # dango — Wagashi Linux package manager
 # A warm wrapper for pacman and yay.
 
-import subprocess, sys, os
+import subprocess, sys, os, re
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
+
+VERBOSE = "--verbose" in sys.argv or "-v" in sys.argv
 
 def say(msg):
     print(f"\n✦ {msg}")
@@ -14,11 +16,51 @@ def run(cmd, capture=False):
         return subprocess.run(cmd, shell=True, capture_output=True, text=True)
     return subprocess.run(cmd, shell=True)
 
+def run_filtered(cmd):
+    """Run a pacman/yay command, filtering output unless --verbose."""
+    if VERBOSE:
+        return subprocess.run(cmd, shell=True)
+
+    process = subprocess.Popen(
+        cmd, shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+
+    important = []
+    for line in process.stdout:
+        line = line.rstrip()
+
+        # Always show errors and warnings
+        if re.search(r'^error:|^warning:', line, re.IGNORECASE):
+            print(f"  {line}")
+            continue
+
+        # Package list — what's being installed
+        if re.match(r'^Packages \(\d+\)', line):
+            print(f"  {line}")
+            continue
+
+        # Download and install sizes
+        if re.match(r'^Total (Download|Installed) Size:', line):
+            print(f"  {line}")
+            continue
+
+        # Disk space check — Yasashii version
+        if 'checking available disk space' in line.lower():
+            print(f"\n✦ Looking for a place in your disk...")
+            continue
+
+        # Silenced: resolving, checking integrity, loading, etc.
+
+    process.wait()
+    return process
+
 def has_yay():
     return run("which yay", capture=True).returncode == 0
 
 def is_live():
-    """Detecta si estamos en el entorno live de Wagashi."""
     return os.path.exists("/run/archiso")
 
 def help():
@@ -39,6 +81,7 @@ def help():
   dango -Sc           clean package cache
   dango -Scc          clean entire package cache
   dango --version     show version
+  dango --verbose     show full pacman output
 
   Searches pacman and AUR automatically.
   No Flatpak. Intentionally.
@@ -49,17 +92,17 @@ def install(pkg):
     if is_live():
         say("Live system detected. Syncing repos first...")
         run("pacman -Sy")
-    result = run(f"pacman -S {pkg}")
-    if result.returncode != 0:
+    result = run_filtered(f"pacman -S {pkg}")
+    if hasattr(result, 'returncode') and result.returncode != 0:
         if has_yay():
-            say("Not in the main repos. Checking AUR...")
-            result = run(f"yay -S {pkg}")
-            if result.returncode != 0:
+            say(f"Couldn't find it there. Checking AUR...")
+            result = run_filtered(f"yay -S {pkg}")
+            if hasattr(result, 'returncode') and result.returncode != 0:
                 say(f"Couldn't find {pkg}. Maybe it doesn't exist, maybe it's you.")
         else:
             say(f"Couldn't find {pkg}. Maybe it doesn't exist, maybe it's you.")
     else:
-        say(f"{pkg} is ready.")
+        say(f"All set. {pkg} is ready.")
 
 def remove(pkg, with_deps=False):
     say(f"Removing {pkg}...")
@@ -68,15 +111,15 @@ def remove(pkg, with_deps=False):
     if result.returncode == 0:
         say("Gone. No judgment.")
     else:
-        say(f"Couldn't remove {pkg}. It might not be installed.")
+        say(f"Couldn't find {pkg}. It may already be gone.")
 
 def sync():
     if is_live():
         say("Syncing package databases. (Live system — not updating, just syncing.)")
     else:
         say("Syncing package databases...")
-    run("pacman -Sy")
-    say("Repos are up to date.")
+    run_filtered("pacman -Sy")
+    say("Looks like we're all caught up, enjoy!")
 
 def update():
     if is_live():
@@ -84,10 +127,10 @@ def update():
         say("Install Wagashi Linux first, then update from there.")
         return
     say("Checking what's new...")
-    run("pacman -Syu")
+    run_filtered("pacman -Syu")
     if has_yay():
         say("Checking AUR packages too...")
-        run("yay -Syu --aur")
+        run_filtered("yay -Syu --aur")
     say("All done. Your computer is slightly better now.")
 
 def search(query):
@@ -121,15 +164,15 @@ def owns(file):
 
 def clean(full=False):
     if full:
-        say("Clearing the entire package cache. No going back.")
+        say("Clearing the package cache. We can always download it again.")
         run("pacman -Scc")
     else:
         say("Cleaning up old package versions. Your disk will thank you.")
         run("pacman -Sc")
-    say("Done. That feels better.")
+    say("That feels better.")
 
 def main():
-    args = sys.argv[1:]
+    args = [a for a in sys.argv[1:] if a not in ("--verbose", "-v")]
     if not args or args[0] in ("--help", "-h"):
         help()
         return
