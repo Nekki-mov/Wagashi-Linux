@@ -29,7 +29,7 @@ STRINGS = {
     "USER_INTRO":               "Now, let's talk about you.",
     "USER_USERNAME":            "What's your username? (lowercase, no spaces)",
     "USER_USERNAME_ERROR":      "Lowercase only — it's a Linux thing, not us being difficult.",
-    "USER_USERNAME_RETRY":      "Username",
+    "USER_USERNAME_RETRY":      "lowercase, no spaces",
     "USER_PASSWORD":            "And a password for {username}?",
     "USER_PASSWORD_PROMPT":     "Password",
     "USER_PASSWORD_CONFIRM":    "Again",
@@ -143,6 +143,7 @@ STRINGS = {
     "DONE_WELCOME":             "Welcome home, {username}.",
     "DONE_TAGLINE":             "Your computer, always yours.",
     "DONE_REBOOT":              "Type reboot to enter Wagashi.",
+    "DONE_REBOOT_BTN":          "reboot",
 
     "CHOICE_PROMPT":            "Your choice",
     "CHOICE_ERROR":             "Just the number, please.",
@@ -157,12 +158,12 @@ STRINGS = {
     "LANG_JA":                  "日本語",
 
     "SPLASH_NAME":              "Hikaru",
-    "SPLASH_SUBTITLE":          "La luz del cielo.",
+    "SPLASH_SUBTITLE":          "Encantada de conocerte.",
 
     "WELCOME_1":                "Hola. Vamos a preparar tu nuevo ordenador.",
     "WELCOME_2":                "Te haré unas preguntas. Nada complicado.",
 
-    "NETWORK_CHECKING":         "Primero, vamos a comprobar la conexión.",
+    "NETWORK_CHECKING":         "Antes, necesito hablar con internet.",
     "NETWORK_OK":               "Ya hay conexión. Perfecto.",
     "NETWORK_FAIL":             "No parece que haya conexión a Internet.",
     "NETWORK_WIFI_ASK":         "¿Quieres conectarte a una red Wi-Fi?",
@@ -175,7 +176,7 @@ STRINGS = {
     "USER_INTRO":               "Ahora te toca a ti.",
     "USER_USERNAME":            "¿Qué nombre de usuario quieres usar? (minúsculas, sin espacios)",
     "USER_USERNAME_ERROR":      "Sólo minúsculas. Son cosas de Linux.",
-    "USER_USERNAME_RETRY":      "Nombre de usuario",
+    "USER_USERNAME_RETRY":      "minúsculas · son cosas de Linux",
     "USER_PASSWORD":            "¿Y una contraseña para {username}?",
     "USER_PASSWORD_PROMPT":     "Contraseña",
     "USER_PASSWORD_CONFIRM":    "Otra vez",
@@ -289,6 +290,7 @@ STRINGS = {
     "DONE_WELCOME":             "Ya estás en casa, {username}.",
     "DONE_TAGLINE":             "Espero haber sido de ayuda. Ojalá este lugar se convierta en un hogar para ti.",
     "DONE_REBOOT":              "Escribe reboot para entrar en Wagashi.",
+    "DONE_REBOOT_BTN":          "reiniciar",
 
     "CHOICE_PROMPT":            "¿Cuál prefieres?",
     "CHOICE_ERROR":             "Sólo necesito el número.",
@@ -321,7 +323,7 @@ STRINGS = {
     "USER_INTRO":               "次は、あなたの番です。",
     "USER_USERNAME":            "ユーザー名は何にしますか？（ローマ字・スペースなし）",
     "USER_USERNAME_ERROR":      "ローマ字でお願いします。Linux のルールです。",
-    "USER_USERNAME_RETRY":      "ユーザー名",
+    "USER_USERNAME_RETRY":      "ローマ字です。Linux のルールです。",
     "USER_PASSWORD":            "{username} のパスワードを決めましょう。",
     "USER_PASSWORD_PROMPT":     "パスワード",
     "USER_PASSWORD_CONFIRM":    "もう一度",
@@ -435,6 +437,7 @@ STRINGS = {
     "DONE_WELCOME":             "お帰りなさい、{username}。",
     "DONE_TAGLINE":             "ここが、あなたの居場所になりますように。",
     "DONE_REBOOT":              "reboot と入力すると、Wagashi が始まります。",
+    "DONE_REBOOT_BTN":          "リブート",
 
     "CHOICE_PROMPT":            "どれにしますか？",
     "CHOICE_ERROR":             "番号だけで大丈夫です。",

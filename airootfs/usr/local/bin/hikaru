@@ -395,7 +395,8 @@ def main():
         "zsh nano git curl wget htop unzip tar man-db "
         "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
         "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation "
-        "lxqt openbox lightdm lightdm-gtk-greeter accountsservice "
+        "xorg-server xorg-xinit xorg-xrandr "
+        "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
         "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs gvfs"
     )
     extra_pkgs = purpose_packages(purpose)
@@ -411,6 +412,8 @@ def main():
         f.write(f"::1         localhost\n")
         f.write(f"127.0.1.1   {hostname}.localdomain {hostname}\n")
     run("echo 'en_US.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
+    if lang == "es":
+        run("echo 'es_ES.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
     if lang == "ja":
         run("echo 'ja_JP.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
     run("arch-chroot /mnt locale-gen")
@@ -423,30 +426,27 @@ def main():
     say(T["INSTALL_USER"])
     run(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
+    run(f"echo 'root:{password}' | arch-chroot /mnt chpasswd")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
-    # easter eggs
-    with open(f"/mnt/home/{username}/.zshrc", "w") as f:
-        f.write('pierogi() { echo "O KURWA"; }\n')
-        f.write("calçot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n")
-
-    # wagashi-firstrun autostart
-    run(f"mkdir -p /mnt/home/{username}/.config/autostart")
-    with open(f"/mnt/home/{username}/.config/autostart/wagashi-firstrun.desktop", "w") as f:
-        f.write("[Desktop Entry]\nType=Application\nName=Wagashi First Run\n")
-        f.write("Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\nX-LXQT-Need-Tray=false\n")
+    # wagashi-firstrun autostart — eliminado de aquí, se escribe después del chown
 
     # LightDM config
     run("mkdir -p /mnt/etc/lightdm")
     with open("/mnt/etc/lightdm/lightdm.conf", "w") as f:
         f.write("[LightDM]\nallow-guest=false\n\n[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nsession-wrapper=/etc/lightdm/Xsession\n")
     with open("/mnt/etc/lightdm/Xsession", "w") as f:
-        f.write("#!/bin/sh\nxdg-user-dirs-update\nexec startlxqt\n")
+        f.write("#!/bin/sh\n")
+        f.write("[ -z \"$DBUS_SESSION_BUS_ADDRESS\" ] && eval $(dbus-launch --sh-syntax --exit-with-session)\n")
+        f.write("xdg-user-dirs-update\n")
+        f.write("exec startlxqt\n")
     run("chmod 755 /mnt/etc/lightdm/Xsession")
 
     # copiar instaladores al sistema
     run("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
     run("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
+    run("mkdir -p /mnt/usr/share/wagashi/wallpapers")
+    run("cp -r /usr/share/wagashi/wallpapers/. /mnt/usr/share/wagashi/wallpapers/")
     run("cp /usr/local/bin/hikaru /mnt/usr/local/bin/hikaru")
     run("chmod +x /mnt/usr/local/bin/hikaru")
     run("cp /usr/local/bin/hikaru-gui /mnt/usr/local/bin/hikaru-gui")
@@ -531,7 +531,18 @@ def main():
         setup_passthrough(gpu_passthrough)
 
     say(T["INSTALL_ALMOST"], 1)
-    run(f"chown -R {username}:{username} /mnt/home/{username}")
+
+    # home files — escritos como root, chown via arch-chroot al final
+    run(f"mkdir -p /mnt/home/{username}/.config/autostart")
+    with open(f"/mnt/home/{username}/.config/autostart/wagashi-firstrun.desktop", "w") as f:
+        f.write("[Desktop Entry]\nType=Application\nName=Wagashi First Run\n")
+        f.write("Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\nX-LXQT-Need-Tray=false\n")
+    with open(f"/mnt/home/{username}/.zshrc", "w") as f:
+        f.write('pierogi() { echo "O KURWA"; }\n')
+        f.write("calçot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n")
+    # chown dentro del chroot — garantiza permisos correctos
+    run(f"arch-chroot /mnt chown -R {username}:{username} /home/{username}")
+
     time.sleep(2)
     clear()
 

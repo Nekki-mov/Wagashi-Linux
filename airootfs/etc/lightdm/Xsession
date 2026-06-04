@@ -1,5 +1,4 @@
 #!/bin/sh
-# Si no hay batería, silenciar lxqt-powermanagement
 if ! ls /sys/class/power_supply/BAT* 2>/dev/null | grep -q BAT; then
     mkdir -p ~/.config/autostart
     cat > ~/.config/autostart/lxqt-powermanagement.desktop << 'DESKTOP'

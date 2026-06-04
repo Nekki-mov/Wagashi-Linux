@@ -277,7 +277,7 @@ class BasePage(QWidget):
         self.layout.addSpacing(48)
 
     def add_section(self, text):
-        label = QLabel(text.upper())
+        label = QLabel(text if any(ord(c) > 127 for c in text) else text.upper())
         label.setObjectName("section")
         label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.layout.addWidget(label)
@@ -285,16 +285,18 @@ class BasePage(QWidget):
 
     def add_nav(self, back=True, next_text=None, next_fn=None):
         T = self.window.T
+        back_text = {"en": "← back", "es": "← atrás", "ja": "← 戻る"}.get(self.window.lang, "← back")
         self.layout.addStretch()
         self.layout.addSpacing(40)
         row = QHBoxLayout()
         if back:
-            btn_back = QPushButton("← back")
+            btn_back = QPushButton(back_text)
             btn_back.setObjectName("secondary")
             btn_back.clicked.connect(self.window.prev_page)
             row.addWidget(btn_back)
         row.addStretch()
-        btn_next = QPushButton(next_text or "Continue")
+        continue_text = {"en": "Continue", "es": "Continuar", "ja": "次へ"}.get(self.window.lang, "Continue")
+        btn_next = QPushButton(next_text or continue_text)
         btn_next.setObjectName("primary")
         btn_next.clicked.connect(next_fn or self.window.next_page)
         row.addWidget(btn_next)
@@ -368,9 +370,14 @@ class LanguagePage(QWidget):
         layout = QVBoxLayout(center)
         layout.setSpacing(16)
 
-        for lang_code, label in [("en", "English"), ("es", "Español"), ("ja", "日本語")]:
+        for lang_code, label, font in [
+            ("en", "English",  COLORS['font_body']),
+            ("es", "Español",  COLORS['font_body']),
+            ("ja", "日本語",   "Noto Sans CJK JP"),
+        ]:
             btn = QPushButton(label)
             btn.setObjectName("lang")
+            btn.setStyleSheet(f"font-family: '{font}'; font-size: 16px;")
             btn.clicked.connect(lambda checked, lc=lang_code: self.window.set_language(lc))
             layout.addWidget(btn)
 
@@ -407,24 +414,26 @@ class WelcomePage(BasePage):
         self.layout.addWidget(subtitle)
         self.layout.addSpacing(4)
 
-        tagline = QLabel(T["WELCOME_1"])
+        tagline = QLabel(T["WELCOME_2"])
         tagline.setAlignment(Qt.AlignmentFlag.AlignCenter)
         tagline.setStyleSheet(f"color: {COLORS['text_ghost']}; font-size: 13px; background: transparent;")
         self.layout.addWidget(tagline)
 
         self.layout.addStretch()
-        self.add_nav(back=False, next_text="begin")
+        begin_text = {"en": "begin", "es": "comenzar", "ja": "始める"}.get(window.lang, "begin")
+        self.add_nav(back=False, next_text=begin_text)
 
 
 class NetworkPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
         T = window.T
-        self.add_title("Connection.")
+        connection_title = {"en": "Connection.", "es": "Conexión.", "ja": "接続。"}.get(window.lang, "Connection.")
+        self.add_title(connection_title)
         self.add_subtitle(T["NETWORK_CHECKING"])
         self.layout.addStretch()
 
-        self.status = QLabel("checking...")
+        self.status = QLabel("")
         self.status.setObjectName("subtitle")
         self.status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.status)
@@ -461,7 +470,7 @@ class UserPage(BasePage):
 
         self.add_section(T["SUMMARY_USER"])
         self.username = QLineEdit()
-        self.username.setPlaceholderText(T["USER_USERNAME_RETRY"].lower())
+        self.username.setPlaceholderText(T["USER_USERNAME_RETRY"])
         self.layout.addWidget(self.username)
         self.layout.addSpacing(32)
 
@@ -552,7 +561,8 @@ class KeyboardPage(BasePage):
             self.layout.addLayout(row)
             self.layout.addSpacing(4)
 
-        self.buttons["us"].setChecked(True)
+        default_keyboard = "jp106" if window.lang == "ja" else "us"
+        self.buttons[default_keyboard].setChecked(True)
         self.other_input = QLineEdit()
         self.other_input.setPlaceholderText(T["KEYBOARD_OTHER_PROMPT"])
         self.other_input.setVisible(False)
@@ -593,7 +603,8 @@ class TimezonePage(BasePage):
             self.layout.addWidget(rb)
             self.layout.addSpacing(4)
 
-        self.continent_buttons["Europe"].setChecked(True)
+        default_continent = "Asia" if window.lang == "ja" else "Europe"
+        self.continent_buttons[default_continent].setChecked(True)
         self.layout.addSpacing(32)
         self.add_section(T["TIMEZONE_CITY_PROMPT"])
         self.city_input = QLineEdit()
@@ -727,8 +738,6 @@ class VirtualizationPage(BasePage):
         self.add_title("Ushio.")
         self.add_subtitle(T["USHIO_ASK"])
 
-        self.enable_vm  = QRadioButton(T["USHIO_GPU_NVIDIA"].split("is")[0].strip() + " — " + T["SUMMARY_YES"])
-        self.disable_vm = QRadioButton("— " + T["SUMMARY_NO"])
         self.enable_vm  = QRadioButton(T["SUMMARY_YES"])
         self.disable_vm = QRadioButton(T["SUMMARY_NO"])
         self.disable_vm.setChecked(True)
@@ -775,8 +784,10 @@ class SecurityPage(BasePage):
     def __init__(self, window):
         super().__init__(window)
         T = window.T
-        self.add_title(T["FIREWALL_ASK"])
-        self.add_subtitle("")
+        security_title = {"en": "Security.", "es": "Hora de llamar al gorila.", "ja": "守りを固めましょう。"}.get(window.lang, "Security.")
+        security_subtitle = {"en": "", "es": "Necesitamos seguridad.", "ja": "セキュリティが必要です。"}.get(window.lang, "")
+        self.add_title(security_title)
+        self.add_subtitle(security_subtitle)
         self.layout.addSpacing(16)
 
         self.firewall = QCheckBox(T["FIREWALL_ASK"])
@@ -803,30 +814,66 @@ class SummaryPage(BasePage):
         self.add_subtitle(T["SUMMARY_WARNING"])
 
         self.summary = QLabel()
-        self.summary.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 14px; background: transparent; line-height: 200%;")
+        self.summary.setStyleSheet(
+            f"color: {COLORS['text_dim']}; font-size: 14px; background: transparent; "
+            f"line-height: 180%; font-family: monospace;"
+        )
         self.summary.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.summary)
-        self.add_nav(next_text=T["SUMMARY_CONFIRM"], next_fn=self.window.next_page)
+
+        ushio_note = QLabel(T["SUMMARY_USHIO_DESC"])
+        ushio_note.setStyleSheet(f"color: {COLORS['text_ghost']}; font-size: 12px; background: transparent;")
+        ushio_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.layout.addSpacing(8)
+        self.layout.addWidget(ushio_note)
+        confirm_text = {"en": "let's go", "es": "comenzar", "ja": "始める"}.get(window.lang, "let's go")
+        self.add_nav(next_text=confirm_text, next_fn=self.window.next_page)
 
     def showEvent(self, event):
         T = self.window.T
         d = self.window.data
         yes = T["SUMMARY_YES"]
         no  = T["SUMMARY_NO"]
+
+        purpose_map = {
+            "everyday":        T["PURPOSE_EVERYDAY"].split("—")[0].strip().split("·")[0].strip().split("—")[0].strip(),
+            "creative":        T["PURPOSE_CREATIVE"].split("—")[0].strip(),
+            "dev":             T["PURPOSE_DEV"].split("—")[0].strip(),
+            "gaming":          T["PURPOSE_GAMING"].split("—")[0].strip(),
+            "gaming_creative": T["PURPOSE_GAMING_CREATIVE"].split("—")[0].strip(),
+            "everything":      T["PURPOSE_EVERYTHING"].split("—")[0].strip(),
+        }
+        layout_map = {
+            "simple":    T["LAYOUT_SIMPLE"].split("—")[0].strip().split(".")[0].strip(),
+            "separated": T["LAYOUT_SEPARATED"].split("—")[0].strip().split(".")[0].strip(),
+            "encrypted": T["LAYOUT_ENCRYPTED"].split("—")[0].strip().split(".")[0].strip(),
+        }
+
+        purpose_val = purpose_map.get(d.get("purpose", ""), d.get("purpose", "—"))
+        layout_val  = layout_map.get(d.get("layout", ""),  d.get("layout",  "—"))
+        ushio_val   = yes if d.get("virtualization") else no
+
         rows = [
             (T["SUMMARY_USER"],     d.get("username", "—")),
             (T["SUMMARY_COMPUTER"], d.get("hostname",  "—")),
             (T["SUMMARY_KEYBOARD"], d.get("keyboard",  "us")),
             (T["SUMMARY_TIMEZONE"], d.get("timezone",  "UTC")),
             (T["SUMMARY_DISK"],     d.get("disk_label", d.get("disk", "—"))),
-            (T["SUMMARY_SETUP"],    d.get("layout",    "—")),
-            (T["SUMMARY_PURPOSE"],  d.get("purpose",   "—")),
+            (T["SUMMARY_SETUP"],    layout_val),
+            (T["SUMMARY_PURPOSE"],  purpose_val),
             (T["SUMMARY_FIREWALL"], yes if d.get("firewall")     else no),
             (T["SUMMARY_UPDATES"],  yes if d.get("auto_updates") else no),
-            (T["SUMMARY_USHIO"],    f"{T['SUMMARY_USHIO_DESC']} — {yes if d.get('virtualization') else no}"),
+            (T["SUMMARY_USHIO"],    ushio_val),
         ]
-        lines = "\n".join(f"{k:<18}{v}" for k, v in rows)
+        bg = COLORS['bg']
+        ghost = COLORS['text_ghost']
+        dim = COLORS['text_dim']
+        lines = f"<table style='border-spacing: 16px 6px; background: {bg};'>"
+        for k, v in rows:
+            lines += f"<tr><td style='color: {ghost}; text-align: right;'>{k}</td><td style='color: {dim};'>{v}</td></tr>"
+        lines += "</table>"
         self.summary.setText(lines)
+        self.summary.setStyleSheet("background: transparent; font-size: 14px;")
 
 
 class InstallWorker(QThread):
@@ -916,7 +963,8 @@ class InstallWorker(QThread):
             "zsh nano git curl wget htop unzip tar man-db "
             "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
             "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
-            "lxqt openbox lightdm lightdm-gtk-greeter accountsservice "
+            "xorg-server xorg-xinit xorg-xrandr "
+            "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
             "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs gvfs"
         )
         extra = purpose_packages(d.get("purpose", "everyday"))
@@ -931,6 +979,8 @@ class InstallWorker(QThread):
             f"127.0.0.1   localhost\n::1         localhost\n127.0.1.1   {d['hostname']}.localdomain {d['hostname']}\n"
         )
         self.run_cmd("echo 'en_US.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
+        if lang == "es":
+            self.run_cmd("echo 'es_ES.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
         if lang == "ja":
             self.run_cmd("echo 'ja_JP.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
         self.run_cmd("arch-chroot /mnt locale-gen")
@@ -942,18 +992,8 @@ class InstallWorker(QThread):
         self.status(T["INSTALL_USER"], 78)
         self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
         self.run_cmd(f"echo '{username}:{d['password']}' | arch-chroot /mnt chpasswd")
+        self.run_cmd(f"echo 'root:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
-
-        home = f"/mnt/home/{username}"
-        self.run_cmd(f"mkdir -p {home}/.config/autostart")
-        self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
-            "[Desktop Entry]\nType=Application\nName=Wagashi First Run\n"
-            "Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\nX-LXQT-Need-Tray=false\n"
-        )
-        self.write_file(f"{home}/.zshrc",
-            'pierogi() { echo "O KURWA"; }\n'
-            "calçot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n"
-        )
 
         self.status(T["INSTALL_BOOTLOADER"], 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
@@ -983,6 +1023,8 @@ class InstallWorker(QThread):
         self.status(T["INSTALL_BRANDING"], 86)
         self.run_cmd("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
         self.run_cmd("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
+        self.run_cmd("mkdir -p /mnt/usr/share/wagashi/wallpapers")
+        self.run_cmd("cp -r /usr/share/wagashi/wallpapers/. /mnt/usr/share/wagashi/wallpapers/")
         self.run_cmd("cp /usr/local/bin/hikaru-gui /mnt/usr/local/bin/hikaru-gui")
         self.run_cmd("chmod +x /mnt/usr/local/bin/hikaru-gui")
         self.run_cmd("cp /usr/local/bin/hikaru /mnt/usr/local/bin/hikaru")
@@ -993,7 +1035,12 @@ class InstallWorker(QThread):
         self.write_file("/mnt/etc/lightdm/lightdm.conf",
             "[LightDM]\nallow-guest=false\n\n[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nsession-wrapper=/etc/lightdm/Xsession\n"
         )
-        self.write_file("/mnt/etc/lightdm/Xsession", "#!/bin/sh\nxdg-user-dirs-update\nexec startlxqt\n")
+        self.write_file("/mnt/etc/lightdm/Xsession",
+            "#!/bin/sh\n"
+            "[ -z \"$DBUS_SESSION_BUS_ADDRESS\" ] && eval $(dbus-launch --sh-syntax --exit-with-session)\n"
+            "xdg-user-dirs-update\n"
+            "exec startlxqt\n"
+        )
         self.run_cmd("chmod 755 /mnt/etc/lightdm/Xsession")
 
         self.write_file("/mnt/etc/os-release",
@@ -1038,7 +1085,21 @@ class InstallWorker(QThread):
             self._setup_passthrough(d.get("gpu_passthrough", "none"))
 
         self.status(T["INSTALL_ALMOST"], 99)
-        self.run_cmd(f"chown -R {username}:{username} /mnt/home/{username}")
+
+        # home files — escritos como root, chown via arch-chroot al final
+        home = f"/mnt/home/{username}"
+        self.run_cmd(f"mkdir -p {home}/.config/autostart")
+        self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
+            "[Desktop Entry]\nType=Application\nName=Wagashi First Run\n"
+            "Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\nX-LXQT-Need-Tray=false\n"
+        )
+        self.write_file(f"{home}/.zshrc",
+            'pierogi() { echo "O KURWA"; }\n'
+            "calçot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n"
+        )
+        # chown dentro del chroot — garantiza permisos correctos
+        self.run_cmd(f"arch-chroot /mnt chown -R {username}:{username} /home/{username}")
+
         self.status(T["DONE_TITLE"], 100)
         self.finished.emit()
 
@@ -1084,10 +1145,12 @@ class InstallPage(BasePage):
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
+        self.progress.setTextVisible(False)
         self.layout.addWidget(self.progress)
         self.layout.addSpacing(24)
 
-        self.status = QLabel("starting...")
+        starting_text = {"en": "starting...", "es": "preparando...", "ja": "準備中..."}.get(window.lang, "starting...")
+        self.status = QLabel(starting_text)
         self.status.setObjectName("accent")
         self.status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.status)
@@ -1127,15 +1190,14 @@ class InstallPage(BasePage):
 class DonePage(BasePage):
     def __init__(self, window):
         super().__init__(window)
-        T = window.T
         self.layout.addStretch()
 
-        title = QLabel(T["DONE_TITLE"])
-        title.setObjectName("title")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label = QLabel("")
+        self.title_label.setObjectName("title")
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         done_color = COLORS['text'] if EDITION == "nayuki" else COLORS['accent']
-        title.setStyleSheet(f"font-family: '{COLORS['font_title']}'; font-size: 56px; font-weight: 300; color: {done_color}; background: transparent;")
-        self.layout.addWidget(title)
+        self.title_label.setStyleSheet(f"font-family: '{COLORS['font_title']}'; font-size: 56px; font-weight: 300; color: {done_color}; background: transparent;")
+        self.layout.addWidget(self.title_label)
         self.layout.addSpacing(24)
 
         self.username_label = QLabel("")
@@ -1144,7 +1206,7 @@ class DonePage(BasePage):
         self.layout.addWidget(self.username_label)
         self.layout.addSpacing(12)
 
-        self.tagline_label = QLabel(T["DONE_TAGLINE"])
+        self.tagline_label = QLabel("")
         self.tagline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.tagline_label.setStyleSheet(f"color: {COLORS['text_dim']}; font-size: 13px; background: transparent;")
         self.layout.addWidget(self.tagline_label)
@@ -1152,7 +1214,7 @@ class DonePage(BasePage):
         self.layout.addStretch()
 
         self.countdown = 10
-        self.reboot_btn = QPushButton(f"{T['DONE_REBOOT']} ({self.countdown})")
+        self.reboot_btn = QPushButton("")
         self.reboot_btn.setObjectName("primary")
         self.reboot_btn.clicked.connect(self.do_reboot)
         btn_layout = QHBoxLayout()
@@ -1163,14 +1225,14 @@ class DonePage(BasePage):
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.tick)
-        self._T = T
 
     def tick(self):
         self.countdown -= 1
         if self.countdown <= 0:
             self.do_reboot()
         else:
-            self.reboot_btn.setText(f"{self._T['DONE_REBOOT']} ({self.countdown})")
+            T = self.window.T
+            self.reboot_btn.setText(f"{T['DONE_REBOOT_BTN']} ({self.countdown})")
 
     def do_reboot(self):
         self.timer.stop()
@@ -1179,9 +1241,11 @@ class DonePage(BasePage):
     def showEvent(self, event):
         T = self.window.T
         username = self.window.data.get("username", "")
+        self.title_label.setText(T["DONE_TITLE"])
         self.username_label.setText(T["DONE_WELCOME"].format(username=username))
+        self.tagline_label.setText(T["DONE_TAGLINE"])
         self.countdown = 10
-        self.reboot_btn.setText(f"{T['DONE_REBOOT']} ({self.countdown})")
+        self.reboot_btn.setText(f"{T['DONE_REBOOT_BTN']} ({self.countdown})")
         self.timer.start(1000)
 
 
