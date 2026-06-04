@@ -15,12 +15,12 @@ A place. Calm, intentional, and quietly yours.
 This repository contains the full source for every edition of Wagashi Linux.  
 Each branch is its own thing — same soul, different shape.
 
-| Branch | Edition |
-|---|---|
-| `kde` | KDE Plasma — the primary edition |
-| `windowmaker` | WindowMaker — retrofuturist, NeXTSTEP-inspired |
-| `monochrome` | Monochrome — KDE with an intentional monochromatic theme |
-| `lxqt-community` | LXQt — lightweight, community-maintained |
+| Branch | Edition | Year | Desktop |
+|---|---|---|---|
+| `Ayu-KDE` | **Wagashi Ayu** | 2026 | KDE Plasma 6, Wayland |
+| `Mishio-Nostalgia` | **Wagashi Mishio** | 1996 | WindowMaker 0.96 |
+| `Sayuri-Monochrome` | **Wagashi Sayuri** | 2077 | KDE Plasma 6, Wayland — Monochrome |
+| `Nayuki-LXQt` | **Wagashi Nayuki** | 2008 | LXQt |
 
 `main` contains what's common to all editions: the philosophy, the tools, the voice.
 
@@ -36,6 +36,7 @@ Everything has a name. Everything has a reason.
 | **dango** | Package manager — wraps pacman and yay, Yasashii voice |
 | **Hikaru** | Installer — CLI and GUI, guided and calm |
 | **Ushio** | Virtualization — QEMU-KVM, GPU passthrough ready |
+| **Ana** | System guide — named after the person who made this possible |
 | **Yasashii Protocol** | How the system speaks to you |
 
 ---
@@ -56,6 +57,7 @@ If it doesn't feel Yasashii, it's not done yet.
 You'll need `archiso` and a machine running Arch Linux.
 
 ```bash
+git checkout Ayu-KDE   # or Mishio-Nostalgia, Sayuri-Monochrome, Nayuki-LXQt
 sudo mkarchiso -v -w ~/wagashi-work -o ~/wagashi-out ~/wagashi
 ```
 
