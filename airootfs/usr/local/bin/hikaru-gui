@@ -30,11 +30,12 @@ EDITION = detect_edition()
 if EDITION == "sayuri":
     COLORS = {
         "bg":           "#000000",
-        "surface":      "#080808",
-        "border":       "#1a1a1a",
+        "card":         "#111111",
+        "surface":      "#1a1a1a",
+        "border":       "#2a2a2a",
         "text":         "#e8e8e8",
-        "text_dim":     "#484848",
-        "text_ghost":   "#282828",
+        "text_dim":     "#686868",
+        "text_ghost":   "#404040",
         "accent":       "#e8a0a0",
         "accent_hover": "#f0b8b8",
         "accent_dark":  "#c07070",
@@ -44,7 +45,8 @@ if EDITION == "sayuri":
     }
 elif EDITION == "nayuki":
     COLORS = {
-        "bg":           "#f0d8c0",
+        "bg":           "#e8d0b0",
+        "card":         "#f0d8c0",
         "surface":      "#e8c8b0",
         "border":       "#c8a888",
         "text":         "#3a2a0a",
@@ -107,9 +109,9 @@ STYLE = f"""
     QLabel#error  {{ color: {COLORS['error']};  font-size: 13px; }}
     QPushButton#primary {{
         background-color: {COLORS['accent']};
-        color: #000000;
+        color: {'#f8f8f8' if EDITION == 'sayuri' else '#3a2a0a'};
         border: none;
-        border-radius: 2px;
+        border-radius: 8px;
         padding: 12px 40px;
         font-size: 13px;
         font-weight: 600;
@@ -119,28 +121,27 @@ STYLE = f"""
     QPushButton#primary:pressed {{ background-color: {COLORS['accent_dark']}; }}
     QPushButton#secondary {{
         background-color: transparent;
-        color: {COLORS['text_dim']};
+        color: {COLORS['text']};
         border: 1px solid {COLORS['border']};
-        border-radius: 2px;
+        border-radius: 8px;
         padding: 12px 40px;
         font-size: 13px;
         letter-spacing: 1px;
     }}
-    QPushButton#secondary:hover {{ color: {COLORS['text']}; border-color: {COLORS['text_dim']}; }}
+    QPushButton#secondary:hover {{ color: {COLORS['text']}; border-color: {COLORS['accent']}; }}
     QPushButton#lang {{
-        background-color: transparent;
-        color: {COLORS['text_dim']};
+        background-color: {COLORS['surface']};
+        color: {COLORS['text']};
         border: 1px solid {COLORS['border']};
-        border-radius: 2px;
+        border-radius: 8px;
         padding: 16px 48px;
         font-size: 16px;
         letter-spacing: 1px;
         min-width: 160px;
     }}
     QPushButton#lang:hover {{
-        color: {COLORS['text']};
         border-color: {COLORS['accent']};
-        background-color: {COLORS['surface']};
+        background-color: {COLORS['border']};
     }}
     QLineEdit {{
         background-color: {COLORS['surface']};
@@ -249,16 +250,41 @@ class BasePage(QWidget):
         self._outer = QVBoxLayout(self)
         self._outer.setContentsMargins(0, 0, 0, 0)
         self._outer.setSpacing(0)
+
+        card_color = COLORS.get("card", COLORS["surface"])
+        self._card = QWidget()
+        self._card.setStyleSheet(
+            f"background-color: {card_color};"
+            f"border-radius: 20px;"
+        )
+        self._card.setMaximumWidth(760)
+        self._card.setMinimumWidth(580)
+
         self._center = QWidget()
         self._center.setMaximumWidth(640)
+        self._center.setStyleSheet("background: transparent;")
         self.layout = QVBoxLayout(self._center)
-        self.layout.setContentsMargins(0, 80, 0, 60)
+        self.layout.setContentsMargins(0, 60, 0, 48)
         self.layout.setSpacing(0)
+
+        card_inner = QHBoxLayout()
+        card_inner.addStretch()
+        card_inner.addWidget(self._center)
+        card_inner.addStretch()
+        card_layout = QVBoxLayout(self._card)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.addLayout(card_inner)
+
         wrap = QHBoxLayout()
         wrap.addStretch()
-        wrap.addWidget(self._center)
+        wrap.addWidget(self._card)
         wrap.addStretch()
-        self._outer.addLayout(wrap)
+
+        outer_wrap = QVBoxLayout()
+        outer_wrap.addStretch()
+        outer_wrap.addLayout(wrap)
+        outer_wrap.addStretch()
+        self._outer.addLayout(outer_wrap)
 
     def add_title(self, text):
         label = QLabel(text)
@@ -365,10 +391,17 @@ class LanguagePage(QWidget):
         outer = QVBoxLayout(self)
         outer.addStretch()
 
+        card_color = COLORS.get("card", COLORS["surface"])
+        card = QWidget()
+        card.setStyleSheet(f"background-color: {card_color}; border-radius: 20px;")
+        card.setMaximumWidth(400)
+
         center = QWidget()
-        center.setMaximumWidth(480)
+        center.setMaximumWidth(320)
+        center.setStyleSheet("background: transparent;")
         layout = QVBoxLayout(center)
         layout.setSpacing(16)
+        layout.setContentsMargins(0, 48, 0, 48)
 
         for lang_code, label, font in [
             ("en", "English",  COLORS['font_body']),
@@ -381,9 +414,17 @@ class LanguagePage(QWidget):
             btn.clicked.connect(lambda checked, lc=lang_code: self.window.set_language(lc))
             layout.addWidget(btn)
 
+        card_inner = QHBoxLayout()
+        card_inner.addStretch()
+        card_inner.addWidget(center)
+        card_inner.addStretch()
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.addLayout(card_inner)
+
         wrap = QHBoxLayout()
         wrap.addStretch()
-        wrap.addWidget(center)
+        wrap.addWidget(card)
         wrap.addStretch()
         outer.addLayout(wrap)
         outer.addStretch()
@@ -963,7 +1004,9 @@ class InstallWorker(QThread):
             "zsh nano git curl wget htop unzip tar man-db "
             "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
             "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
-            "plasma sddm konsole python-pyqt6 plymouth"
+            "xorg-server xorg-xinit xorg-xrandr "
+            "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
+            "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs gvfs"
         )
         extra = purpose_packages(d.get("purpose", "everyday"))
         self.run_cmd(f"pacstrap /mnt {base} {extra}".strip())
@@ -1029,17 +1072,24 @@ class InstallWorker(QThread):
         self.run_cmd("chmod +x /mnt/usr/local/bin/hikaru")
         self.run_cmd("cp /usr/local/bin/hikaru_strings.py /mnt/usr/local/bin/hikaru_strings.py")
 
-        self.run_cmd("mkdir -p /mnt/etc/sddm.conf.d")
-        self.write_file("/mnt/etc/sddm.conf.d/wagashi.conf",
-            "[Theme]\nCurrent=breeze\n\n[Autologin]\nRelogin=false\n"
+        self.run_cmd("mkdir -p /mnt/etc/lightdm")
+        self.write_file("/mnt/etc/lightdm/lightdm.conf",
+            "[LightDM]\nallow-guest=false\n\n[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nsession-wrapper=/etc/lightdm/Xsession\n"
         )
+        self.write_file("/mnt/etc/lightdm/Xsession",
+            "#!/bin/sh\n"
+            "[ -z \"$DBUS_SESSION_BUS_ADDRESS\" ] && eval $(dbus-launch --sh-syntax --exit-with-session)\n"
+            "xdg-user-dirs-update\n"
+            "exec startlxqt\n"
+        )
+        self.run_cmd("chmod 755 /mnt/etc/lightdm/Xsession")
 
         self.write_file("/mnt/etc/os-release",
-            'NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Ayu (KDE)"\n'
+            'NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n'
             'ID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\n'
             'HOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n'
         )
-        self.write_file("/mnt/etc/motd", "Welcome to Wagashi Linux — Ayu (KDE).\nYour computer, always yours.\n")
+        self.write_file("/mnt/etc/motd", "Welcome to Wagashi Linux — Nayuki (LXQt).\nYour computer, always yours.\n")
 
         self.status(T["INSTALL_PLYMOUTH"], 88)
         self.run_cmd("mkdir -p /mnt/usr/share/plymouth/themes/wagashi")
@@ -1058,9 +1108,10 @@ class InstallWorker(QThread):
 
         self.status(T["INSTALL_SERVICES"], 94)
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")
-        self.run_cmd("arch-chroot /mnt systemctl enable sddm")
+        self.run_cmd("arch-chroot /mnt systemctl enable lightdm")
         self.run_cmd("arch-chroot /mnt systemctl enable bluetooth")
         self.run_cmd("arch-chroot /mnt systemctl enable cups")
+        self.run_cmd("arch-chroot /mnt systemctl --global enable gvfs-daemon", check=False)
 
         if d.get("firewall"):
             self.run_cmd("pacstrap /mnt ufw")
@@ -1081,8 +1132,7 @@ class InstallWorker(QThread):
         self.run_cmd(f"mkdir -p {home}/.config/autostart")
         self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
             "[Desktop Entry]\nType=Application\nName=Wagashi First Run\n"
-            "Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\n"
-            "X-KDE-autostart-after=panel\n"
+            "Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\nX-LXQT-Need-Tray=false\n"
         )
         self.write_file(f"{home}/.zshrc",
             'pierogi() { echo "O KURWA"; }\n'
