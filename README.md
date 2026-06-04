@@ -1,10 +1,10 @@
-# Wagashi Linux — WindowMaker Edition
+# Wagashi Linux — Mishio (Nostalgia Edition)
 
-**For people who think computers peaked aesthetically sometime around 1994.**
+**1996. For people who think computers peaked aesthetically sometime around 1994.**
 
 This is Wagashi Linux with WindowMaker.  
 NeXTSTEP-inspired. Retrofuturist. Coherent.  
-Technology as something worth caring about.
+Technology as something worth caring about — and keeping.
 
 ---
 
@@ -13,11 +13,12 @@ Technology as something worth caring about.
 A complete, bootable Arch-based system with:
 
 - **linux-zen** kernel
-- **WindowMaker** desktop
+- **WindowMaker 0.96** desktop
 - **LightDM** as the display manager
-- **Hikaru CLI** — the conversational installer, no GUI needed
+- **Hikaru CLI** — the conversational installer in English, Spanish, and Japanese
 - **dango** — the package manager with a Yasashii voice
 - Custom Wagashi theming adapted for the WindowMaker aesthetic
+- Wallpapers adapted for 4:3, 16:9, and 16:10 screens — original art by Nekki.mov
 
 ---
 
@@ -30,19 +31,31 @@ Wagashi Linux meets it halfway:
 the soul stays the same — calm, intentional, yours —  
 but the shape fits the tool.
 
+1996 is the year computing had opinions.  
+Mishio still does.
+
 ---
 
 ## Installing
 
-Boot the ISO. You'll land at a terminal.  
-Run `hikaru` and follow along. It asks, you answer. That's the whole thing.
+Boot the ISO. WindowMaker loads with the Wagashi wallpaper.  
+Hikaru opens automatically in a terminal. It asks, you answer. That's the whole thing.
+
+---
+
+## Technical notes
+
+- WindowMaker is packaged locally — compiled from AUR and shipped in the ISO
+- LightDM handles login on the installed system
+- `wmaker.inst` runs automatically on first login to initialize the GNUstep environment
+- ⚠️ Two spaces in `WorkspaceBack =  (solid` — this is not a typo. Don't touch it.
 
 ---
 
 ## Building
 
 ```bash
-git checkout windowmaker
+git checkout Mishio-Nostalgia
 sudo mkarchiso -v -w ~/wagashi-work -o ~/wagashi-out ~/wagashi
 ```
 
