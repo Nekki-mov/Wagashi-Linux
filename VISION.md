@@ -187,10 +187,10 @@ No theme is "the dark mode" or "the light mode." They're moods.
 | Role | Hex | Feel |
 |---|---|---|
 | Background | `#f0d8c0` | Warm cream |
-| Surface | `#f0d8d8` | Blush white |
+| Surface | `#e8c8b0` | Warm sand |
 | Accent primary | `#d890a8` | Dango pink |
 | Accent secondary | `#a8c0d8` | Dango blue |
-| Text | `#604818` | Warm brown |
+| Text | `#3a2a0a` | Deep warm brown |
 | Highlight | `#d8d8a8` | Soft butter yellow |
 
 ---
@@ -251,49 +251,56 @@ A coworker who does great work in silence and occasionally says something unexpe
 
 Wagashi Linux ships in four editions. Each has a name — a character from *Kanon* — because names matter, and these editions deserve them.
 
+Each edition also has a year. Not a release date. A feeling.
+
 ---
 
 ### Wagashi Ayu *(primary)*
-*KDE Plasma 6, Wayland.*
+*KDE Plasma 6, Wayland. — 2026.*
 
 The full Wagashi Linux experience. The one people will screenshot — but for the right reasons.  
 Warm, detailed, carefully tuned. Modern without being cold.  
-This is the edition that carries the full visual identity of the project.
+This is the edition that carries the full visual identity of the project.  
+It exists now. It feels like now.
 
-Installer: **Hikaru GUI**
+Branch: `Ayu-KDE` — Installer: **Hikaru GUI**
 
 ---
 
 ### Wagashi Mishio
-*WindowMaker 0.96.*
+*WindowMaker 0.96. — 1996.*
 
 NeXTSTEP-inspired. Retrofuturist. For people who think computers peaked aesthetically sometime around 1994.  
 Coherent with the project soul: technology as something to care about, something to keep.  
-Every pixel is earned. Every menu is intentional.
+Every pixel is earned. Every menu is intentional.  
+It feels like the year computing had opinions.
 
-Installer: **Hikaru CLI**
+Branch: `Mishio-Nostalgia` — Installer: **Hikaru CLI**
 
 ---
 
 ### Wagashi Sayuri
-*KDE Plasma 6, Wayland. Monochrome.*
+*KDE Plasma 6, Wayland. Monochrome. — 2077.*
 
 Not grayscale by accident. Intentionally black, white, and every considered tone between.  
 The only color that matters appears exactly where it needs to — in coral, precisely.  
 Inspired by *Iroduku* and *Violet Evergarden*: the beauty in restraint, the weight of a single color.  
-For people who find color distracting. Still warm. Still Wagashi.
+For people who find color distracting. Still warm. Still Wagashi.  
+The only edition that looks like a future that hasn't arrived yet.
 
-Installer: **Hikaru GUI** *(Monochrome palette)*
+Branch: `Sayuri-Monochrome` — Installer: **Hikaru GUI** *(Monochrome palette)*
 
 ---
 
 ### Wagashi Nayuki *(community)*
-*LXQt.*
+*LXQt. — 2008.*
 
 A lightweight edition for old hardware. Built on the original vision that every computer deserves a second life.  
-Respectful of limited resources. Comfortable anyway.
+Respectful of limited resources. Comfortable anyway.  
+2008 is the year people started throwing away computers that still worked.  
+Nayuki is for those computers. And for the people who kept them.
 
-Installer: **Hikaru CLI + GUI**
+Branch: `Nayuki-LXQt` — Installer: **Hikaru CLI + GUI** *(Dango Family palette)*
 
 ---
 
@@ -394,7 +401,7 @@ This is a commitment, not a feature request.
 | Primary desktop | KDE Plasma 6 (Wayland) |
 | Lightweight desktop | LXQt |
 | Classic desktop | WindowMaker |
-| Login screen | SDDM |
+| Login screen | SDDM (Ayu/Sayuri) / LightDM (Mishio/Nayuki) |
 | Virtualization | QEMU-KVM (managed by `Ushio`, optional) |
 
 ---
@@ -443,7 +450,7 @@ Fully centered, carefully paced, coral where it matters. Used in Mishio and Nayu
 **Hikaru GUI** — graphical installer built from scratch with Wagashi's visual identity.  
 Soft, calm, guided. Not a wizard full of checkboxes — a conversation.  
 Detects the active edition automatically and loads the corresponding palette.  
-Used in Ayu and Sayuri.
+Used in Ayu, Sayuri, and Nayuki.
 
 Both follow the same principle: installation should feel like arriving somewhere, not surviving something.
 
