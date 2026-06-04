@@ -1,9 +1,27 @@
 #!/usr/bin/env python3
-# Hikaru — Wagashi Linux installer (WindowMaker Edition)
+# Hikaru — Wagashi Linux installer
 # "Light of the sky."
 
 import subprocess, sys, os, getpass, time, re as _re
+from hikaru_strings import STRINGS
 
+# ── Language selection ────────────────────────────────────────────────────────
+def select_language():
+    os.system("clear")
+    print("\n\n  1.  English")
+    print("  2.  Español")
+    print("  3.  日本語")
+    print()
+    while True:
+        choice = input("  → ").strip()
+        if choice == "1": return "en"
+        if choice == "2": return "es"
+        if choice == "3": return "ja"
+
+lang = select_language()
+T = STRINGS[lang]
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
 def clear():
     os.system("clear")
 
@@ -22,38 +40,40 @@ def ask_choice(prompt, options):
         print(f"  {i}.  {desc}")
     print()
     while True:
-        choice = input("  Your choice → ").strip()
+        choice = input(f"  {T['CHOICE_PROMPT']} → ").strip()
         if choice.isdigit() and 1 <= int(choice) <= len(options):
             return list(options.keys())[int(choice) - 1]
-        say("Just the number, please.")
+        say(T["CHOICE_ERROR"])
 
 def ask_yes(prompt, default="yes"):
-    hint = "[Yes/no]" if default == "yes" else "[yes/No]"
+    hint = T["YES_NO_YES"] if default == "yes" else T["YES_NO_NO"]
     val = input(f"\n✦ {prompt} {hint} → ").strip().lower()
     if not val:
         return default == "yes"
-    return val in ("yes", "y", "sí", "si", "s")
+    return val in ("yes", "y", "sí", "si", "s", "はい")
 
 def run(cmd, check=True, capture=False):
     if capture:
         return subprocess.run(cmd, shell=True, capture_output=True, text=True)
     return subprocess.run(cmd, shell=True, check=check)
 
+# ── Network ───────────────────────────────────────────────────────────────────
 def check_network():
     result = run("ping -c 1 -W 1 1.1.1.1", check=False, capture=True)
     return result.returncode == 0
 
 def setup_wifi():
-    say("Let's get you connected.")
+    say(T["NETWORK_WIFI_CONNECTING"])
     run("iwctl station wlan0 scan && sleep 2 && iwctl station wlan0 get-networks", check=False)
-    ssid = ask("Network name (SSID)")
+    ssid = ask(T["NETWORK_WIFI_SSID"])
     if not ssid:
         return False
-    password = getpass.getpass(f"  Password for {ssid} → ")
+    password = getpass.getpass(f"  → ")
     run(f'iwctl --passphrase "{password}" station wlan0 connect "{ssid}"', check=False)
     time.sleep(3)
     return check_network()
 
+# ── Disk ──────────────────────────────────────────────────────────────────────
 def get_disks():
     result = run("lsblk -d -o NAME,SIZE,MODEL,TYPE | grep disk", capture=True)
     disks = []
@@ -63,18 +83,7 @@ def get_disks():
             disks.append((parts[0], parts[1], " ".join(parts[2:-1]) or "Unknown"))
     return disks
 
-def purpose_packages(purpose):
-    pkgs = []
-    if purpose in ("everyday", "everything"):
-        pkgs += ["firefox", "vlc"]
-    if purpose in ("creative", "gaming_creative", "everything"):
-        pkgs += ["gimp", "inkscape"]
-    if purpose in ("dev", "everything"):
-        pkgs += ["git", "python", "nodejs", "npm"]
-    if purpose in ("gaming", "gaming_creative", "everything"):
-        pkgs += ["steam", "lutris", "wine", "winetricks", "gamemode"]
-    return " ".join(pkgs)
-
+# ── GPU / Ushio ───────────────────────────────────────────────────────────────
 def _detect_cpu_vendor():
     result = run("grep -m1 'vendor_id' /proc/cpuinfo", capture=True)
     return "amd" if "AuthenticAMD" in result.stdout else "intel"
@@ -99,27 +108,32 @@ def _resolve_gpu(gpu_choice):
     if gpu_choice in ("nvidia", "amd"):
         candidates = [(a, v, d, l) for a, v, d, l in gpus if v == gpu_choice]
         if not candidates:
-            say(f"No {gpu_choice.upper()} GPU found. Skipping passthrough.")
+            say(T["USHIO_GPU_NOT_FOUND"].format(vendor=gpu_choice.upper()))
             return None
         if len(candidates) == 1:
             return candidates[0][0], candidates[0][1], candidates[0][2]
-        print("\n✦ More than one GPU found. Which one for passthrough?\n")
+        print(f"\n✦ {T['USHIO_GPU_WHICH']}\n")
         for i, (_, _, _, l) in enumerate(candidates, 1):
             print(f"  {i}.  {l}")
         while True:
-            c = input("\n  Your choice → ").strip()
+            c = input(f"\n  {T['CHOICE_PROMPT']} → ").strip()
             if c.isdigit() and 1 <= int(c) <= len(candidates):
                 idx = int(c) - 1
                 return candidates[idx][0], candidates[idx][1], candidates[idx][2]
     if gpu_choice == "auto":
         if len(gpus) == 1:
-            say("Only one GPU found. You'll need a second one for passthrough. (This one has plans.)")
+            say(T["USHIO_GPU_ONE"])
             return None
-        print("\n✦ Which GPU should be passed through to VMs?\n")
+        discrete = [(a, v, d, l) for a, v, d, l in gpus if not a.startswith("00:02")]
+        if len(discrete) == 1:
+            a, v, d, l = discrete[0]
+            say(T["USHIO_GPU_DETECTED"].format(gpu=l))
+            return a, v, d
+        print(f"\n✦ {T['USHIO_GPU_WHICH']}\n")
         for i, (_, _, _, l) in enumerate(gpus, 1):
             print(f"  {i}.  {l}")
         while True:
-            c = input("\n  Your choice → ").strip()
+            c = input(f"\n  {T['CHOICE_PROMPT']} → ").strip()
             if c.isdigit() and 1 <= int(c) <= len(gpus):
                 idx = int(c) - 1
                 return gpus[idx][0], gpus[idx][1], gpus[idx][2]
@@ -135,7 +149,7 @@ def setup_passthrough(gpu_choice):
     cpu = _detect_cpu_vendor()
     iommu_param = "amd_iommu=on" if cpu == "amd" else "intel_iommu=on"
 
-    say(f"Enabling IOMMU ({iommu_param})...")
+    say(T["USHIO_IOMMU"].format(param=iommu_param))
     with open("/mnt/etc/default/grub", "r") as f:
         grub = f.read()
     if iommu_param not in grub:
@@ -146,7 +160,7 @@ def setup_passthrough(gpu_choice):
         with open("/mnt/etc/default/grub", "w") as f:
             f.write(grub)
 
-    say("Configuring vfio-pci...")
+    say(T["USHIO_VFIO"])
     with open("/mnt/etc/modprobe.d/vfio.conf", "w") as f:
         f.write(f"options vfio-pci ids={device_id}\n")
         if vendor == "nvidia":
@@ -161,174 +175,192 @@ def setup_passthrough(gpu_choice):
             f.write(mk)
 
     if vendor == "nvidia":
-        say("Applying NVIDIA vendor-id patch...")
+        say(T["USHIO_NVIDIA_PATCH"])
         with open("/mnt/etc/modprobe.d/nvidia-vfio.conf", "w") as f:
             f.write("options kvm ignore_msrs=1\n")
             f.write("options kvm report_ignored_msrs=0\n")
 
-    say("Regenerating GRUB and initramfs for passthrough...")
     run("sync")
+    say(T["USHIO_REBUILD"])
     run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
     run("arch-chroot /mnt mkinitcpio -P")
-    say(f"Ushio — passthrough ready. ({vendor.upper()} @ {pci_addr})")
+    say(T["USHIO_READY"].format(vendor=vendor.upper(), addr=pci_addr))
 
+# ── Purpose packages ──────────────────────────────────────────────────────────
+def purpose_packages(purpose):
+    base = []
+    if purpose in ("everyday", "everything"):
+        base += ["firefox", "vlc"]
+    if purpose in ("creative", "gaming_creative", "everything"):
+        base += ["krita", "kdenlive", "obs-studio", "inkscape"]
+    if purpose in ("dev", "everything"):
+        base += ["code", "docker", "python", "nodejs", "npm"]
+    if purpose in ("gaming", "gaming_creative", "everything"):
+        base += ["steam", "lutris", "wine", "winetricks", "gamemode"]
+    return " ".join(base)
+
+# ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     clear()
-    print("""
-    ✦ Hikaru
-      Light of the sky.
+    print(f"""
+    ✦ {T['SPLASH_NAME']}
+      {T['SPLASH_SUBTITLE']}
     """)
     time.sleep(1)
 
-    say("Welcome. Let's set up your new computer.")
-    say("I'll ask you a few questions. Nothing complicated.", 0.5)
+    say(T["WELCOME_1"])
+    say(T["WELCOME_2"], 0.5)
 
     # Network
-    say("First, let's check your connection.")
+    say(T["NETWORK_CHECKING"])
     if check_network():
-        say("You're connected. Good.")
+        say(T["NETWORK_OK"])
     else:
-        say("No internet connection found.")
+        say(T["NETWORK_FAIL"])
         has_wifi = run("ip link show wlan0", check=False, capture=True).returncode == 0
         if has_wifi:
-            if ask_yes("Would you like to connect to a Wi-Fi network?"):
+            if ask_yes(T["NETWORK_WIFI_ASK"]):
                 if not setup_wifi():
-                    say("Couldn't connect. You can continue, but package download may fail.")
+                    say(T["NETWORK_WIFI_FAIL"])
         else:
-            say("No Wi-Fi detected. Make sure your ethernet cable is plugged in.")
-            say("Continuing anyway.")
+            say(T["NETWORK_NO_WIFI"])
+            say(T["NETWORK_CONTINUING"])
 
     # User
-    say("Now, let's talk about you.")
-    username = ask("What's your username? (lowercase, no spaces)")
+    say(T["USER_INTRO"])
+    username = ask(T["USER_USERNAME"])
     while not username or not username.replace("-", "").replace("_", "").isalnum() or username[0].isdigit():
-        say("Lowercase only — it's a Linux thing, not us being difficult.")
-        username = ask("Username")
+        say(T["USER_USERNAME_ERROR"])
+        username = ask(T["USER_USERNAME_RETRY"])
 
-    say(f"Nice. And a password for {username}?")
+    say(T["USER_PASSWORD"].format(username=username))
     while True:
-        password = getpass.getpass("  Password → ")
-        confirm = getpass.getpass("  Again → ")
+        password = getpass.getpass(f"  {T['USER_PASSWORD_PROMPT']} → ")
+        confirm  = getpass.getpass(f"  {T['USER_PASSWORD_CONFIRM']} → ")
         if password == confirm and password:
             break
-        say("Those don't match, or the password was empty. Try again.")
+        say(T["USER_PASSWORD_ERROR"])
 
-    say("What should this computer be called on your network?")
-    hostname = ask("Computer name", default="wagashi")
+    say(T["USER_HOSTNAME"])
+    hostname = ask(T["USER_HOSTNAME_PROMPT"], default="wagashi")
 
     # Keyboard
-    layout = ask_choice("What keyboard layout are you using?", {
-        "us":        "US / English (default)",
-        "es":        "Spanish",
-        "uk":        "UK / British",
-        "fr":        "French",
-        "de":        "German",
-        "it":        "Italian",
-        "pt-latin1": "Portuguese",
-        "other":     "Other — I'll configure it manually later",
+    layout = ask_choice(T["KEYBOARD_ASK"], {
+        "us":        T["KEYBOARD_US"],
+        "es":        T["KEYBOARD_ES"],
+        "uk":        T["KEYBOARD_UK"],
+        "fr":        T["KEYBOARD_FR"],
+        "de":        T["KEYBOARD_DE"],
+        "it":        T["KEYBOARD_IT"],
+        "pt-latin1": T["KEYBOARD_PT"],
+        "jp106":     T["KEYBOARD_JA"],
+        "other":     T["KEYBOARD_OTHER"],
     })
     if layout == "other":
-        layout = ask("Layout code (e.g. dvorak, colemak)", default="us")
+        layout = ask(T["KEYBOARD_OTHER_PROMPT"], default="us")
 
     # Timezone
-    continent = ask_choice("Roughly, where are you?", {
-        "Europe":    "Europe",
-        "America":   "Americas",
-        "Asia":      "Asia",
-        "Africa":    "Africa",
-        "Australia": "Australia / Oceania",
-        "UTC":       "I don't know / keep it simple (UTC)",
+    continent = ask_choice(T["TIMEZONE_ASK"], {
+        "Europe":    T["TIMEZONE_EUROPE"],
+        "America":   T["TIMEZONE_AMERICA"],
+        "Asia":      T["TIMEZONE_ASIA"],
+        "Africa":    T["TIMEZONE_AFRICA"],
+        "Australia": T["TIMEZONE_AUSTRALIA"],
+        "UTC":       T["TIMEZONE_UTC"],
     })
     if continent == "UTC":
         timezone = "UTC"
     else:
-        say(f"And the city closest to you in {continent}?")
-        say("Examples: Madrid, London, New_York, Tokyo, Sao_Paulo")
-        city = ask("City", default="London" if continent == "Europe" else "")
+        say(T["TIMEZONE_CITY"].format(continent=continent))
+        say(T["TIMEZONE_CITY_EXAMPLES"])
+        city = ask(T["TIMEZONE_CITY_PROMPT"], default="London" if continent == "Europe" else "")
         timezone = f"{continent}/{city}"
 
     # Purpose
-    purpose = ask_choice("What's this computer going to be for?", {
-        "everyday":        "Everyday life — browsing, watching things, maybe some work.",
-        "creative":        "Creative work — design, illustration, photo.",
-        "dev":             "Development — code, servers, containers, experiments.",
-        "gaming":          "Gaming — games, compatibility, performance.",
-        "gaming_creative": "Gaming + Creative — both. because why choose.",
-        "everything":      "Everything — just put it all in. I'll sort it out later.",
+    purpose = ask_choice(T["PURPOSE_ASK"], {
+        "everyday":        T["PURPOSE_EVERYDAY"],
+        "creative":        T["PURPOSE_CREATIVE"],
+        "dev":             T["PURPOSE_DEV"],
+        "gaming":          T["PURPOSE_GAMING"],
+        "gaming_creative": T["PURPOSE_GAMING_CREATIVE"],
+        "everything":      T["PURPOSE_EVERYTHING"],
     })
 
     # Disk
-    say("Let's find a home for Wagashi.")
+    say(T["DISK_INTRO"])
     disks = get_disks()
     if not disks:
-        say("No disks found. Something is wrong.")
+        say(T["DISK_NONE"])
         sys.exit(1)
 
-    print("\n✦ Available disks:\n")
+    print(f"\n✦ {T['DISK_LIST_TITLE']}\n")
     for i, (name, size, model) in enumerate(disks, 1):
         print(f"  {i}.  {size}  —  {model}  (/dev/{name})")
     print()
 
     while True:
-        choice = input("  Which disk should Wagashi live on? → ").strip()
+        choice = input(f"  {T['DISK_ASK']} → ").strip()
         if choice.isdigit() and 1 <= int(choice) <= len(disks):
             disk_name = disks[int(choice) - 1][0]
             disk = f"/dev/{disk_name}"
+            disk_display = f"{disks[int(choice)-1][1]} — {disks[int(choice)-1][2]}"
             break
-        say("Just the number next to the disk.")
+        say(T["DISK_ERROR"])
 
     # Disk layout
-    layout_choice = ask_choice("How would you like to set up the disk?", {
-        "simple":    "Simple — everything together. Easy and works great.",
-        "separated": "Separated — home folder gets its own space. Good if you reinstall often.",
-        "encrypted": "Encrypted — everything locked with a password. Maximum privacy.",
+    layout_choice = ask_choice(T["LAYOUT_ASK"], {
+        "simple":    T["LAYOUT_SIMPLE"],
+        "separated": T["LAYOUT_SEPARATED"],
+        "encrypted": T["LAYOUT_ENCRYPTED"],
     })
 
-    # Virtualization
-    enable_vm = ask_yes("Set up virtualization (Ushio)? Run other OSes inside Wagashi.", default="no")
+    # Ushio
+    enable_vm = ask_yes(T["USHIO_ASK"], default="no")
     gpu_passthrough = "none"
     if enable_vm:
-        gpu_passthrough = ask_choice("GPU passthrough — which GPU will you pass to VMs?", {
-            "nvidia": "My passthrough GPU is NVIDIA",
-            "amd":    "My passthrough GPU is AMD",
-            "auto":   "I don't know — find out for me",
-            "none":   "I don't want GPU passthrough",
+        gpu_passthrough = ask_choice(T["USHIO_GPU_ASK"], {
+            "nvidia": T["USHIO_GPU_NVIDIA"],
+            "amd":    T["USHIO_GPU_AMD"],
+            "auto":   T["USHIO_GPU_AUTO"],
+            "none":   T["USHIO_GPU_NONE"],
         })
 
     # Security
-    enable_firewall = ask_yes("Enable a firewall? Recommended for most people.")
+    enable_firewall    = ask_yes(T["FIREWALL_ASK"])
+    enable_auto_updates = ask_yes(T["UPDATES_ASK"])
 
     # Summary
     clear()
     print(f"""
-    ✦ Here's the plan:
+    ✦ {T['SUMMARY_TITLE']}
 
-      User        {username}
-      Computer    {hostname}
-      Keyboard    {layout}
-      Timezone    {timezone}
-      Purpose     {purpose}
-      Disk        {disk}
-      Setup       {layout_choice}
-      Ushio       {"yes" if enable_vm else "no"}
-      Firewall    {"yes" if enable_firewall else "no"}
+      {T['SUMMARY_USER']:<14}{username}
+      {T['SUMMARY_COMPUTER']:<14}{hostname}
+      {T['SUMMARY_KEYBOARD']:<14}{layout}
+      {T['SUMMARY_TIMEZONE']:<14}{timezone}
+      {T['SUMMARY_PURPOSE']:<14}{purpose}
+      {T['SUMMARY_DISK']:<14}{disk_display}
+      {T['SUMMARY_SETUP']:<14}{layout_choice}
+      {T['SUMMARY_USHIO']:<14}{T['SUMMARY_USHIO_DESC']} — {T['SUMMARY_YES'] if enable_vm else T['SUMMARY_NO']}
+      {T['SUMMARY_FIREWALL']:<14}{T['SUMMARY_YES'] if enable_firewall else T['SUMMARY_NO']}
+      {T['SUMMARY_UPDATES']:<14}{T['SUMMARY_YES'] if enable_auto_updates else T['SUMMARY_NO']}
     """)
 
-    say("Everything on that disk will be erased and replaced with Wagashi Linux.")
-    if not ask_yes("Ready to go?", default="no"):
-        say("No worries. Come back when you're ready.")
+    say(T["SUMMARY_WARNING"])
+    if not ask_yes(T["SUMMARY_CONFIRM"], default="no"):
+        say(T["SUMMARY_CANCEL"])
         sys.exit(0)
 
     # Installation
     clear()
-    say("Starting. This will take a few minutes. (this is the slow part)", 0.5)
+    say(T["INSTALL_START"], 0.5)
 
-    is_nvme = "nvme" in disk_name
+    is_nvme  = "nvme" in disk_name
     part_efi  = f"{disk}p1" if is_nvme else f"{disk}1"
     part_root = f"{disk}p2" if is_nvme else f"{disk}2"
     part_home = f"{disk}p3" if is_nvme else f"{disk}3"
 
-    say("Making room for Wagashi.")
+    say(T["INSTALL_DISK"])
     run(f"wipefs -af {disk}")
     run(f"parted -s {disk} mklabel gpt")
     run(f"parted -s {disk} mkpart ESP fat32 1MiB 513MiB")
@@ -340,230 +372,194 @@ def main():
         run(f"mkfs.ext4 -F {part_home}")
     elif layout_choice == "encrypted":
         run(f"parted -s {disk} mkpart root ext4 513MiB 100%")
-        say("Locking the door. You'll have the only key.")
+        say(T["LAYOUT_ENCRYPT_INTRO"])
         run(f"cryptsetup luksFormat {part_root}")
         run(f"cryptsetup open {part_root} wagashi_crypt")
         part_root = "/dev/mapper/wagashi_crypt"
     else:
         run(f"parted -s {disk} mkpart root ext4 513MiB 100%")
 
-    say("Clearing the space. A blank page.")
+    say(T["INSTALL_FORMAT"])
     run(f"mkfs.fat -F32 {part_efi}")
     run(f"mkfs.ext4 -F {part_root}")
 
-    say("Getting things in order.")
+    say(T["INSTALL_MOUNT"])
     run(f"mount {part_root} /mnt")
     run(f"mount --mkdir {part_efi} /mnt/boot/efi")
     if layout_choice == "separated":
         run(f"mount --mkdir {part_home} /mnt/home")
 
-    say("Installing Wagashi Linux. This is the slow part — go get a coffee.")
+    say(T["INSTALL_PACKAGES"])
     base_pkgs = (
         "base linux-zen linux-firmware sudo networkmanager grub efibootmgr "
-        "zsh nano git curl wget htop unzip tar man-db openssh "
+        "zsh nano git curl wget htop unzip tar man-db "
         "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
-        "mesa noto-fonts noto-fonts-emoji ttf-liberation "
-        "windowmaker xorg-server xorg-xinit xorg-xrandr xterm "
-        "sakura pcmanfm "
-        "lightdm lightdm-gtk-greeter accountsservice plymouth"
+        "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation "
+        "xorg-server xorg-xinit xorg-xrandr "
+        "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
+        "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs gvfs"
     )
     extra_pkgs = purpose_packages(purpose)
     run(f"pacstrap /mnt {base_pkgs} {extra_pkgs}".strip())
 
-    say("Teaching the system where it is.")
+    say(T["INSTALL_CONFIG"])
     run("genfstab -U /mnt >> /mnt/etc/fstab")
     run(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
     run("arch-chroot /mnt hwclock --systohc")
     run(f"echo '{hostname}' > /mnt/etc/hostname")
+    with open("/mnt/etc/hosts", "w") as f:
+        f.write(f"127.0.0.1   localhost\n")
+        f.write(f"::1         localhost\n")
+        f.write(f"127.0.1.1   {hostname}.localdomain {hostname}\n")
     run("echo 'en_US.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
+    if lang == "es":
+        run("echo 'es_ES.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
+    if lang == "ja":
+        run("echo 'ja_JP.UTF-8 UTF-8' >> /mnt/etc/locale.gen")
     run("arch-chroot /mnt locale-gen")
-    run("echo 'LANG=en_US.UTF-8' > /mnt/etc/locale.conf")
+    locale = "ja_JP.UTF-8" if lang == "ja" else "es_ES.UTF-8" if lang == "es" else "en_US.UTF-8"
+    run(f"echo 'LANG={locale}' > /mnt/etc/locale.conf")
+
     if layout != "us":
         run(f"echo 'KEYMAP={layout}' > /mnt/etc/vconsole.conf")
 
-    say("Setting a place for you.")
+    say(T["INSTALL_USER"])
     run(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
+    run(f"echo 'root:{password}' | arch-chroot /mnt chpasswd")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
-    # .xinitrc — WindowMaker
-    with open(f"/mnt/home/{username}/.xinitrc", "w") as f:
-        f.write("#!/bin/sh\nexec wmaker\n")
-    run(f"chmod +x /mnt/home/{username}/.xinitrc")
-    run(f"arch-chroot /mnt chown {username}:{username} /home/{username}/.xinitrc")
+    # wagashi-firstrun autostart — eliminado de aquí, se escribe después del chown
 
-
-
-    # LightDM con session-wrapper
+    # LightDM config
     run("mkdir -p /mnt/etc/lightdm")
-    with open("/mnt/etc/lightdm/Xsession", "w") as f:
-        f.write(
-            "#!/bin/sh\n"
-            "if [ ! -d \"$HOME/GNUstep\" ]; then\n"
-            "    wmaker.inst --nodock\n"
-            "    sed -i 's|WorkspaceBack =  (solid.*|WorkspaceBack = (cpixmap, \"/usr/share/wagashi/wallpapers/Hikaru_16-9.png\", black);|' \"$HOME/GNUstep/Defaults/WindowMaker\"\n"
-            "fi\n"
-            "exec wmaker\n"
-        )
-    run("chmod +x /mnt/etc/lightdm/Xsession")
-
     with open("/mnt/etc/lightdm/lightdm.conf", "w") as f:
-        f.write(
-            '[LightDM]\n'
-            'allow-guest=false\n'
-            '[Seat:*]\n'
-            'greeter-session=lightdm-gtk-greeter\n'
-            'session-wrapper=/etc/lightdm/Xsession\n'
-        )
+        f.write("[LightDM]\nallow-guest=false\n\n[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nsession-wrapper=/etc/lightdm/Xsession\n")
+    with open("/mnt/etc/lightdm/Xsession", "w") as f:
+        f.write("#!/bin/sh\n")
+        f.write("[ -z \"$DBUS_SESSION_BUS_ADDRESS\" ] && eval $(dbus-launch --sh-syntax --exit-with-session)\n")
+        f.write("xdg-user-dirs-update\n")
+        f.write("exec startlxqt\n")
+    run("chmod 755 /mnt/etc/lightdm/Xsession")
 
-    say("Telling the computer how to wake up.")
+    # copiar instaladores al sistema
+    run("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
+    run("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
+    run("mkdir -p /mnt/usr/share/wagashi/wallpapers")
+    run("cp -r /usr/share/wagashi/wallpapers/. /mnt/usr/share/wagashi/wallpapers/")
+    run("cp /usr/local/bin/hikaru /mnt/usr/local/bin/hikaru")
+    run("chmod +x /mnt/usr/local/bin/hikaru")
+    run("cp /usr/local/bin/hikaru-gui /mnt/usr/local/bin/hikaru-gui")
+    run("chmod +x /mnt/usr/local/bin/hikaru-gui")
+    run("cp /usr/local/bin/hikaru_strings.py /mnt/usr/local/bin/hikaru_strings.py")
+
+    say(T["INSTALL_BOOTLOADER"])
     run("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
     run("mkdir -p /mnt/boot/grub/themes/wagashi")
-    run("cp /usr/share/grub/themes/wagashi/*.pf2 /mnt/boot/grub/themes/wagashi/")
-
+    run("cp -r /usr/share/grub/themes/wagashi/. /mnt/boot/grub/themes/wagashi/")
     with open("/mnt/etc/default/grub", "w") as f:
         f.write(
-            'GRUB_DEFAULT=0\n'
-            'GRUB_TIMEOUT=5\n'
-            'GRUB_DISTRIBUTOR=""\n'
-            'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\n'
-            'GRUB_CMDLINE_LINUX=""\n'
+            'GRUB_DEFAULT=0\nGRUB_TIMEOUT=5\nGRUB_DISTRIBUTOR=""\n'
+            'GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"\nGRUB_CMDLINE_LINUX=""\n'
             'GRUB_THEME="/boot/grub/themes/wagashi/theme.txt"\n'
-            'GRUB_GFXMODE="auto"\n'
-            'GRUB_GFXPAYLOAD_LINUX=keep\n'
+            'GRUB_GFXMODE="1920x1080,auto"\nGRUB_GFXPAYLOAD_LINUX=keep\n'
         )
-
-    # theme.txt ANTES de grub-mkconfig
-    theme = """# Wagashi Linux GRUB Theme
-# Silence is a design choice.
-
-title-text: ""
-desktop-color: "#000000"
-
-+ label {
-  left = 50%-300
-  top = 38%
-  width = 600
-  height = 40
-  text = "Wagashi Linux"
-  font = "wagashi-36.pf2"
-  color = "#ffffff"
-  align = "center"
-}
-
-+ label {
-  left = 50%-300
-  top = 46%
-  width = 600
-  height = 20
-  text = "your computer, always yours."
-  font = "wagashi-14.pf2"
-  color = "#333333"
-  align = "center"
-}
-
-+ boot_menu {
-  left = 50%-160
-  top = 56%
-  width = 320
-  height = 140
-  item_font = "wagashi-14.pf2"
-  item_color = "#444444"
-  selected_item_color = "#e8a0a0"
-  selected_item_style = "bold"
-  item_height = 32
-  item_padding = 0
-  item_spacing = 4
-  scrollbar = false
-}
-"""
-    with open("/mnt/boot/grub/themes/wagashi/theme.txt", "w") as f:
-        f.write(theme)
-
     run("sync")
     run("arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg")
+    with open("/mnt/boot/grub/themes/wagashi/theme.txt", "w") as tf:
+        tf.write(
+            '# Wagashi Linux GRUB Theme\n# Silence is a design choice.\n\n'
+            'title-text: ""\ndesktop-color: "#000000"\n\n'
+            '+ label {\n  left = 50%-300\n  top = 38%\n  width = 600\n  height = 40\n'
+            '  text = "Wagashi Linux"\n  font = "wagashi-36.pf2"\n  color = "#ffffff"\n  align = "center"\n}\n\n'
+            '+ label {\n  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n'
+            '  text = "your computer, always yours."\n  font = "wagashi-14.pf2"\n  color = "#333333"\n  align = "center"\n}\n\n'
+            '+ boot_menu {\n  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n'
+            '  item_font = "wagashi-14.pf2"\n  item_color = "#444444"\n'
+            '  selected_item_color = "#e8a0a0"\n  selected_item_style = "bold"\n'
+            '  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n  scrollbar = false\n}\n'
+        )
 
-    say("Making it ours.")
+    say(T["INSTALL_DANGO"])
+    run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
+    run("chmod +x /mnt/usr/local/bin/dango")
+
+    say(T["INSTALL_BRANDING"])
     with open("/mnt/etc/os-release", "w") as f:
-        f.write('NAME="Wagashi Linux"\n')
-        f.write('PRETTY_NAME="Wagashi Linux (WindowMaker Edition)"\n')
-        f.write('ID=wagashi\n')
-        f.write('ID_LIKE=arch\n')
-        f.write('BUILD_ID=rolling\n')
-        f.write('ANSI_COLOR="1;35"\n')
-        f.write('HOME_URL="https://wagashi.rednek.org"\n')
-        f.write('LOGO=wagashi\n')
-
+        f.write('NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n')
+        f.write('ID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\n')
+        f.write('HOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n')
     with open("/mnt/etc/motd", "w") as f:
-        f.write('Welcome to Wagashi Linux.\n')
-        f.write('Your computer, always yours.\n')
+        f.write('Welcome to Wagashi Linux — Nayuki (LXQt).\nYour computer, always yours.\n')
 
-    say("Dressing the boot screen.")
+    say(T["INSTALL_PLYMOUTH"])
     run("mkdir -p /mnt/usr/share/plymouth/themes/wagashi")
     run("cp -r /usr/share/plymouth/themes/wagashi/. /mnt/usr/share/plymouth/themes/wagashi/")
     with open("/mnt/etc/mkinitcpio.conf", "w") as f:
         f.write('HOOKS=(base udev plymouth autodetect microcode modconf kms block filesystems keyboard fsck)\n')
     run("arch-chroot /mnt plymouth-set-default-theme wagashi")
 
-    say("Packing everything for the first boot.")
+    say(T["INSTALL_INITRAMFS"])
     run("arch-chroot /mnt mkinitcpio -P")
 
-    say("Installing wallpapers...")
-    run("mkdir -p /mnt/usr/share/wagashi/wallpapers")
-    run("cp /usr/share/wagashi/wallpapers/*.png /mnt/usr/share/wagashi/wallpapers/")
+    say(T["INSTALL_VERIFY"])
+    result = run("arch-chroot /mnt ls /boot/vmlinuz-linux-zen", check=False, capture=True)
+    if result.returncode != 0:
+        say(T["INSTALL_VERIFY_FAIL"])
+        say(T["INSTALL_VERIFY_FAIL_2"])
+    else:
+        say(T["INSTALL_VERIFY_OK"])
 
-    say("Installing dango. The package manager, not the snack.")
-    run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
-    run("chmod +x /mnt/usr/local/bin/dango")
+    vm_check = run("systemd-detect-virt", check=False, capture=True)
+    if vm_check.stdout.strip() not in ("none", ""):
+        say(T["INSTALL_VM_DETECTED"].format(virt=vm_check.stdout.strip()))
 
-    say("Starting the things that should always be running.")
-    run("arch-chroot /mnt systemctl enable NetworkManager")
-    run("arch-chroot /mnt systemctl enable lightdm")
-    run("arch-chroot /mnt systemctl enable accounts-daemon")
-    run("arch-chroot /mnt systemctl enable bluetooth")
-    run("arch-chroot /mnt systemctl enable cups")
-    run("arch-chroot /mnt systemctl enable sshd")
+    say(T["INSTALL_SERVICES"])
+    run("arch-chroot /mnt systemctl enable NetworkManager lightdm bluetooth cups")
+    run("arch-chroot /mnt systemctl --global enable gvfs-daemon", check=False)
 
     if enable_firewall:
-        say("Closing the windows. The unnecessary ones.")
         run("pacstrap /mnt ufw", check=False)
         run("arch-chroot /mnt systemctl enable ufw", check=False)
         run("arch-chroot /mnt ufw --force enable", check=False)
 
     if enable_vm:
-        say("Preparing Ushio. Worlds within worlds.")
+        say(T["USHIO_SETTING_UP"])
         run("pacstrap /mnt qemu-full libvirt virt-manager dnsmasq")
         run("arch-chroot /mnt systemctl enable libvirtd")
         run(f"arch-chroot /mnt usermod -aG libvirt {username}")
         setup_passthrough(gpu_passthrough)
 
-    # Easter eggs en el .zshrc del usuario
-    zshrc_path = f"/mnt/home/{username}/.zshrc"
-    with open(zshrc_path, "a") as f:
-        f.write("\n# easter eggs\n")
-        f.write("pierogi() { echo \"O KURWA\"; }\n")
-        f.write("cal\u00e7ot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT\'S NOT A FUCKING LEEK, IT\'S A CAL\u00c7OT, VISCA LA TERRA NOI!\"; }\n")
-    run(f"arch-chroot /mnt chown {username}:{username} /home/{username}/.zshrc")
+    say(T["INSTALL_ALMOST"], 1)
 
-    say("Almost there...", 1)
+    # home files — escritos como root, chown via arch-chroot al final
+    run(f"mkdir -p /mnt/home/{username}/.config/autostart")
+    with open(f"/mnt/home/{username}/.config/autostart/wagashi-firstrun.desktop", "w") as f:
+        f.write("[Desktop Entry]\nType=Application\nName=Wagashi First Run\n")
+        f.write("Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\nX-LXQT-Need-Tray=false\n")
+    with open(f"/mnt/home/{username}/.zshrc", "w") as f:
+        f.write('pierogi() { echo "O KURWA"; }\n')
+        f.write("calçot() { echo \"Did you know, Hatsune Miku was made by Catalonian people? Yeah, Miku was made by Pompeu Fabra University, so IT'S NOT A FUCKING LEEK, IT'S A CALÇOT, VISCA LA TERRA NOI!\"; }\n")
+    # chown dentro del chroot — garantiza permisos correctos
+    run(f"arch-chroot /mnt chown -R {username}:{username} /home/{username}")
+
     time.sleep(2)
     clear()
 
     print(f"""
-    ✦ Done.
+    ✦ {T['DONE_TITLE']}
 
-      Wagashi Linux is ready.
-      Welcome home, {username}.
+      {T['DONE_READY']}
+      {T['DONE_WELCOME'].format(username=username)}
 
-      Your computer, always yours.
+      {T['DONE_TAGLINE']}
 
-      ✦ You can reboot now.
-        Type: reboot
+      ✦ {T['DONE_REBOOT']}
     """)
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n✦ Interrupted. Nothing was changed.")
+        print("\n\n✦ ...")
         sys.exit(0)
