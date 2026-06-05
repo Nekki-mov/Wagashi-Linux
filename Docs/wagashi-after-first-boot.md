@@ -71,8 +71,67 @@ i18n for dango. i18n for system messages. The Yasashii Protocol, everywhere.
 Not just the installer — the whole thing.
 
 **3. The things we promised**  
-Ana. Menma. Misae. The web. The repo.  
+Ana. Mochi. Menma. Misae. The web. The repo.  
 Year Zero was about existence. After The First Boot is about identity.
+
+---
+
+## The ecosystem — what's being built
+
+Everything has a name. Everything has a reason. This is what's coming.
+
+### Ana
+*The guide.*
+
+A graphical learning companion — not a tutorial, not a wizard, not a chatbot.  
+A library. Always available. Never mandatory.
+
+Four books:
+- 📖 Basics
+- 📖 When something isn't working
+- 📖 I want to learn more
+- 📖 Places worth visiting
+
+Ana speaks in first person. Ana never makes people feel stupid.  
+Ana is patient, warm, direct, curious, playful, spirited, optimistic, honest.  
+Ana is for everyone. Including the person who just turned on a computer for the first time.
+
+Three languages. EN/ES/JA. From day one.
+
+See: `Docs/ANA.md`
+
+### Mochi
+*The face of dango.*
+
+A graphical package manager — the friendly frontend to dango's engine.  
+Search, browse, install. Categories. Descriptions. One click.
+
+Covers: official Arch repos + AUR + Wagashi repo.  
+Does not cover: Flatpak. Intentionally.
+
+Named after mochi because it's the same family as dango — just softer, rounder, more approachable.
+
+### Wagashi Repository
+*Packages made here, distributed from here.*
+
+A proper Arch-compatible package repository for Wagashi-native software.  
+dango, Hikaru, Ana, Mochi — everything built for Wagashi lives here.
+
+Hosted on Kotomi. Distributed via HTTPS.  
+Included in `/etc/pacman.conf` out of the box.
+
+### Menma
+*Windows compatibility.*
+
+A fork of Wine, deeply integrated and configured out of the box.  
+The goal: first-class Windows application support, not "it might work."  
+Named after Menma from Anohana — she's always there even when you can't see her.
+
+### Misae
+*A fork of WindowMaker.*
+
+For when Mishio needs to grow into something of its own.  
+Named after Misae Sagara from Clannad.
 
 ---
 
