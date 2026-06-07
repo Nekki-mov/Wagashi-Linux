@@ -1,5 +1,8 @@
-NAME="Wagashi Linux"
-PRETTY_NAME="Wagashi Linux"
+NAME="Wagashi Linux Ayu"
+PRETTY_NAME="Wagashi Linux Ayu — KDE Plasma"
+VARIANT="Ayu"
+VARIANT_ID=ayu
+DE="KDE Plasma"
 ID=wagashi
 ID_LIKE=arch
 BUILD_ID=rolling
