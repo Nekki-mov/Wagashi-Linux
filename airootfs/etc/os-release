@@ -1,5 +1,8 @@
-NAME="Wagashi Linux"
-PRETTY_NAME="Wagashi Linux"
+NAME="Wagashi Linux Mishio"
+PRETTY_NAME="Wagashi Linux Mishio — WindowMaker"
+VARIANT="Mishio"
+VARIANT_ID=mishio
+DE="WindowMaker"
 ID=wagashi
 ID_LIKE=arch
 BUILD_ID=rolling
