@@ -1,5 +1,8 @@
-NAME="Wagashi Linux"
-PRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"
+NAME="Wagashi Linux Nayuki"
+PRETTY_NAME="Wagashi Linux Nayuki — LXQt"
+VARIANT="Nayuki"
+VARIANT_ID=nayuki
+DE="LXQt"
 ID=wagashi
 ID_LIKE=arch
 BUILD_ID=rolling
