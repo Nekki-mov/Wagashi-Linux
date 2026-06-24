@@ -1,0 +1,15 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Nekki.mov",
+                "Email": "nborrego2002@gmail.com"
+            }
+        ],
+        "Id": "Wagashi-Ayu-Light",
+        "License": "CC-BY-SA-4.0",
+        "Name": "Wagashi Ayu — Light",
+        "Description": "Warm pendant lights, soft bokeh. The light side of Ayu."
+    }
+}

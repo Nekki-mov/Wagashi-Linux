@@ -26,4 +26,5 @@ file_permissions=(
   ["/usr/local/bin/hikaru-gui"]="0:0:755"
   ["/root/.config/autostart/hikaru.desktop"]="0:0:644"
   ["/root/Desktop/hikaru.desktop"]="0:0:755"
+  ["/etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh"]="0:0:755"
 )
