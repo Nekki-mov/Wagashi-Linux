@@ -392,8 +392,12 @@ def main():
         run(f"echo 'KEYMAP={layout}' > /mnt/etc/vconsole.conf")
 
     say("Creating your user...")
-    run(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
+    run(f"arch-chroot /mnt groupadd -f sddm-bg")
+    run(f"arch-chroot /mnt useradd -m -G wheel,sddm-bg -s /bin/zsh {username}")
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
+    run(f"arch-chroot /mnt mkdir -p /usr/share/sddm/themes/wagashi/backgrounds")
+    run(f"arch-chroot /mnt chgrp sddm-bg /usr/share/sddm/themes/wagashi/backgrounds")
+    run(f"arch-chroot /mnt chmod 775 /usr/share/sddm/themes/wagashi/backgrounds")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
     say("Installing bootloader...")

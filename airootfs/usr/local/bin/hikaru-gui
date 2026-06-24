@@ -1029,10 +1029,14 @@ class InstallWorker(QThread):
         if keyboard != "us":
             self.run_cmd(f"echo 'KEYMAP={keyboard}' > /mnt/etc/vconsole.conf")
 
+        self.run_cmd(f"arch-chroot /mnt groupadd -f sddm-bg")
         self.status(T["INSTALL_USER"], 78)
-        self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
+        self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel,sddm-bg -s /bin/zsh {username}")
         self.run_cmd(f"echo '{username}:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd(f"echo 'root:{d['password']}' | arch-chroot /mnt chpasswd")
+        self.run_cmd(f"arch-chroot /mnt mkdir -p /usr/share/sddm/themes/wagashi/backgrounds")
+        self.run_cmd(f"arch-chroot /mnt chgrp sddm-bg /usr/share/sddm/themes/wagashi/backgrounds")
+        self.run_cmd(f"arch-chroot /mnt chmod 775 /usr/share/sddm/themes/wagashi/backgrounds")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
         self.status(T["INSTALL_BOOTLOADER"], 82)
