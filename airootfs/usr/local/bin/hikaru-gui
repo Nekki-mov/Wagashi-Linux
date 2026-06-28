@@ -235,12 +235,51 @@ def _resolve_gpu_auto(gpu_choice, ask_fn=None):
     return None
 
 def purpose_packages(purpose):
-    pkgs = []
-    if purpose in ("everyday", "everything"):   pkgs += ["firefox", "vlc"]
-    if purpose in ("creative", "gaming_creative", "everything"): pkgs += ["krita", "kdenlive", "obs-studio", "inkscape"]
-    if purpose in ("dev", "everything"):         pkgs += ["code", "docker", "python", "nodejs", "npm"]
-    if purpose in ("gaming", "gaming_creative", "everything"):   pkgs += ["steam", "lutris", "wine", "winetricks", "gamemode"]
-    return " ".join(pkgs)
+    always = [
+        "htop", "btop", "gparted", "keepassxc", "okular", "ark", "spectacle",
+        "cups", "system-config-printer",
+        "wine", "winetricks", "proton-ge-custom",
+    ]
+    everyday = ["firefox", "libreoffice-fresh", "thunderbird", "vlc", "gimp", "gwenview"]
+    creative = [
+        "krita", "gimp", "inkscape", "kdenlive", "obs-studio", "blender",
+        "davinci-resolve", "audacity", "scribus", "musescore",
+    ]
+    dev = [
+        "code", "git", "base-devel", "docker", "docker-compose", "neovim",
+        "github-cli", "nodejs", "dbeaver", "meld", "postman-bin",
+    ]
+    gaming = [
+        "steam", "lutris", "heroic-games-launcher", "gamemode", "mangohud", "discord",
+    ]
+
+    pkgs = list(always)
+
+    if purpose == "everyday":
+        pkgs += everyday
+    elif purpose == "creative":
+        pkgs += creative
+    elif purpose == "dev":
+        pkgs += dev
+    elif purpose == "gaming":
+        pkgs += gaming
+    elif purpose == "gaming_creative":
+        pkgs += gaming + creative
+    elif purpose == "creative_dev":
+        pkgs += creative + dev
+    elif purpose == "everything":
+        pkgs += everyday + creative + dev + gaming
+    else:
+        pkgs += everyday
+
+    seen = set()
+    unique = []
+    for p in pkgs:
+        if p not in seen:
+            seen.add(p)
+            unique.append(p)
+
+    return " ".join(unique)
 
 # ── Base page ──────────────────────────────────────────────────────────────────
 class BasePage(QWidget):
@@ -680,6 +719,7 @@ class PurposePage(BasePage):
             ("dev",             T["PURPOSE_DEV"]),
             ("gaming",          T["PURPOSE_GAMING"]),
             ("gaming_creative", T["PURPOSE_GAMING_CREATIVE"]),
+            ("creative_dev",    T["PURPOSE_CREATIVE_DEV"]),
             ("everything",      T["PURPOSE_EVERYTHING"]),
         ]
 
@@ -883,6 +923,7 @@ class SummaryPage(BasePage):
             "dev":             T["PURPOSE_DEV"].split("—")[0].strip(),
             "gaming":          T["PURPOSE_GAMING"].split("—")[0].strip(),
             "gaming_creative": T["PURPOSE_GAMING_CREATIVE"].split("—")[0].strip(),
+            "creative_dev":    T["PURPOSE_CREATIVE_DEV"].split("—")[0].strip(),
             "everything":      T["PURPOSE_EVERYTHING"].split("—")[0].strip(),
         }
         layout_map = {
@@ -1005,7 +1046,11 @@ class InstallWorker(QThread):
             "zsh nano git curl wget htop unzip tar man-db "
             "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
             "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
-            "plasma sddm konsole python-pyqt6 plymouth"
+            "xorg-server xorg-xwayland "
+            "plasma-desktop plasma-pa plasma-nm plasma-firewall plasma-systemmonitor "
+            "sddm sddm-kcm discover kscreen powerdevil bluedevil kwallet-pam "
+            "breeze breeze-gtk kde-gtk-config "
+            "dolphin konsole python-pyqt6 plymouth"
         )
         extra = purpose_packages(d.get("purpose", "everyday"))
         self.run_cmd(f"pacstrap /mnt {base} {extra}".strip())

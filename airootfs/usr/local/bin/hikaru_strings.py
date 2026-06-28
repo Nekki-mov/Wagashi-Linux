@@ -66,6 +66,7 @@ STRINGS = {
     "PURPOSE_DEV":              "Development — code, servers, containers, experiments.",
     "PURPOSE_GAMING":           "Gaming — games, compatibility, performance.",
     "PURPOSE_GAMING_CREATIVE":  "Gaming + Creative — both. because why choose.",
+    "PURPOSE_CREATIVE_DEV": "Creative + Development — art, code and building weird things at 2 in the morning.",
     "PURPOSE_EVERYTHING":       "Everything — just put it all in. I'll sort it out later.",
 
     "DISK_INTRO":               "Let's find a home for Wagashi.",
@@ -213,6 +214,7 @@ STRINGS = {
     "PURPOSE_DEV":              "Desarrollo. Código, servidores, contenedores y experimentos.",
     "PURPOSE_GAMING":           "Juegos. Compatibilidad, rendimiento y, bueno, juegos.",
     "PURPOSE_GAMING_CREATIVE":  "Juegos + Creatividad. Ambas. Sería una pena tener que elegir.",
+    "PURPOSE_CREATIVE_DEV": "Creatividad + Desarrollo — arte, código y construir cosas raras a las dos de la mañana.",
     "PURPOSE_EVERYTHING":       "Todo. Instálalo todo y ya veré qué hago luego.",
 
     "DISK_INTRO":               "Vamos a buscarle un hogar a Wagashi.",
@@ -360,6 +362,7 @@ STRINGS = {
     "PURPOSE_DEV":              "開発 — コード、サーバー、コンテナ、それから実験。",
     "PURPOSE_GAMING":           "ゲーム — ゲーム、互換性、パフォーマンス。",
     "PURPOSE_GAMING_CREATIVE":  "ゲーム + クリエイティブ — 両方です。どちらか一つなんてもったいないですから。",
+    "PURPOSE_CREATIVE_DEV": "クリエイティブ + 開発 — アートして、コード書いて、深夜二時に変なものを作る。",
     "PURPOSE_EVERYTHING":       "全部 — とりあえず全部入れてください。後で何とかします。",
 
     "DISK_INTRO":               "Wagashi の居場所を決めましょう。",
