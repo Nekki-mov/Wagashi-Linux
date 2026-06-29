@@ -170,51 +170,62 @@ def setup_passthrough(gpu_choice):
 
 
 def purpose_packages(purpose):
-    always = [
+    """Returns (official_pkgs_str, aur_pkgs_str)"""
+    always_official = [
         "htop", "btop", "gparted", "keepassxc", "okular", "ark", "spectacle",
-        "cups", "system-config-printer",
-        "wine", "winetricks", "proton-ge-custom",
+        "cups", "system-config-printer", "wine", "winetricks",
     ]
-    everyday = ["firefox", "libreoffice-fresh", "thunderbird", "vlc", "gimp", "gwenview"]
-    creative = [
+    always_aur = ["proton-ge-custom-bin"]
+
+    everyday_official = ["firefox", "libreoffice-fresh", "thunderbird", "vlc", "gimp", "gwenview"]
+    everyday_aur = []
+
+    creative_official = [
         "krita", "gimp", "inkscape", "kdenlive", "obs-studio", "blender",
-        "davinci-resolve", "audacity", "scribus", "musescore",
+        "audacity", "scribus", "musescore",
     ]
-    dev = [
+    creative_aur = ["davinci-resolve"]
+
+    dev_official = [
         "code", "git", "base-devel", "docker", "docker-compose", "neovim",
-        "github-cli", "nodejs", "dbeaver", "meld", "postman-bin",
+        "github-cli", "nodejs", "dbeaver", "meld",
     ]
-    gaming = [
-        "steam", "lutris", "heroic-games-launcher", "gamemode", "mangohud", "discord",
-    ]
+    dev_aur = ["postman-bin"]
 
-    pkgs = list(always)
+    gaming_official = ["steam", "lutris", "gamemode", "mangohud", "discord"]
+    gaming_aur = ["heroic-games-launcher-bin"]
 
-    if purpose == "everyday":
-        pkgs += everyday
-    elif purpose == "creative":
-        pkgs += creative
-    elif purpose == "dev":
-        pkgs += dev
-    elif purpose == "gaming":
-        pkgs += gaming
-    elif purpose == "gaming_creative":
-        pkgs += gaming + creative
-    elif purpose == "creative_dev":
-        pkgs += creative + dev
-    elif purpose == "everything":
-        pkgs += everyday + creative + dev + gaming
-    else:
-        pkgs += everyday
+    mapping = {
+        "everyday":        ([everyday_official], [everyday_aur]),
+        "creative":        ([creative_official], [creative_aur]),
+        "dev":             ([dev_official], [dev_aur]),
+        "gaming":          ([gaming_official], [gaming_aur]),
+        "gaming_creative": ([gaming_official, creative_official], [gaming_aur, creative_aur]),
+        "creative_dev":    ([creative_official, dev_official], [creative_aur, dev_aur]),
+        "everything":      ([everyday_official, creative_official, dev_official, gaming_official],
+                             [everyday_aur, creative_aur, dev_aur, gaming_aur]),
+    }
 
-    seen = set()
-    unique = []
-    for p in pkgs:
-        if p not in seen:
-            seen.add(p)
-            unique.append(p)
+    off_lists, aur_lists = mapping.get(purpose, ([everyday_official], [everyday_aur]))
 
-    return " ".join(unique)
+    official = list(always_official)
+    for o in off_lists:
+        official += o
+
+    aur = list(always_aur)
+    for a in aur_lists:
+        aur += a
+
+    def dedupe(lst):
+        seen = set()
+        out = []
+        for p in lst:
+            if p not in seen:
+                seen.add(p)
+                out.append(p)
+        return out
+
+    return " ".join(dedupe(official)), " ".join(dedupe(aur))
 
 def main():
     clear()
@@ -417,8 +428,8 @@ def main():
         "dolphin konsole "
         "python-pyqt6 plymouth"
     )
-    extra_pkgs = purpose_packages(purpose)
-    run(f"pacstrap /mnt {base_pkgs} {extra_pkgs}".strip())
+    extra_official, extra_aur = purpose_packages(purpose)
+    run(f"pacstrap /mnt {base_pkgs} {extra_official}".strip())
 
     say("Configuring your system...")
     run("genfstab -U /mnt >> /mnt/etc/fstab")
@@ -440,6 +451,19 @@ def main():
     run(f"arch-chroot /mnt chgrp sddm-bg /usr/share/sddm/themes/wagashi/backgrounds")
     run(f"arch-chroot /mnt chmod 775 /usr/share/sddm/themes/wagashi/backgrounds")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
+
+    if extra_aur:
+        say("Setting up a few extra things from the AUR. This takes a moment...")
+        run("arch-chroot /mnt pacman -S --noconfirm --needed git base-devel")
+        run(
+            f"arch-chroot /mnt su {username} -c "
+            f"\"git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && "
+            f"cd /tmp/yay-bin && makepkg -si --noconfirm\""
+        )
+        run(
+            f"arch-chroot /mnt su {username} -c "
+            f"\"yay -S --noconfirm --needed {extra_aur}\""
+        )
 
     say("Installing bootloader...")
     run("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
