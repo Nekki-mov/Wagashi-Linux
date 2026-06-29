@@ -120,6 +120,25 @@ def _resolve_gpu(gpu_choice):
                 return gpus[idx][0], gpus[idx][1], gpus[idx][2]
     return None
 
+def _host_gpu_packages():
+    result = run("lspci -nn | grep -E 'VGA|3D|Display'", capture=True)
+    lines = [l for l in result.stdout.strip().split("\n") if l]
+    official, aur = [], []
+    for line in lines:
+        upper = line.upper()
+        if "NVIDIA" in upper:
+            if any(x in upper for x in ("RTX", "GTX 16")):
+                official.append("nvidia-open-dkms")
+            elif any(x in upper for x in ("GTX 9", "GTX 10", "TITAN")):
+                official.append("nvidia-dkms")
+            else:
+                aur.append("nvidia-470xx-dkms")
+        elif "AMD" in upper or "ATI" in upper:
+            official += ["vulkan-radeon", "libva-mesa-driver"]
+        elif "INTEL" in upper:
+            official += ["vulkan-intel", "intel-media-driver"]
+    return " ".join(sorted(set(official))), " ".join(sorted(set(aur)))
+
 def setup_passthrough(gpu_choice):
     if gpu_choice == "none":
         return
@@ -429,6 +448,11 @@ def main():
         "python-pyqt6 plymouth"
     )
     extra_official, extra_aur = purpose_packages(purpose)
+    gpu_official, gpu_aur = _host_gpu_packages()
+    if gpu_official:
+        extra_official = f"{extra_official} {gpu_official}".strip()
+    if gpu_aur:
+        extra_aur = f"{extra_aur} {gpu_aur}".strip()
     run(f"pacstrap /mnt {base_pkgs} {extra_official}".strip())
 
     say("Configuring your system...")
@@ -457,6 +481,14 @@ def main():
 
     say("Creating your user...")
     run(f"arch-chroot /mnt groupadd -f sddm-bg")
+    run("mkdir -p /mnt/etc/skel/.config/plasma-workspace/shutdown")
+    run("cp /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc /mnt/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc")
+    run("cp /etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh /mnt/etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh")
+    run("cp /etc/skel/.config/kdeglobals /mnt/etc/skel/.config/kdeglobals")
+    run("mkdir -p /mnt/etc/skel/.config/autostart")
+    run("cp /etc/skel/.config/autostart/wagashi-set-wallpaper.sh /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.sh")
+    run("cp /etc/skel/.config/autostart/wagashi-set-wallpaper.desktop /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.desktop")
+    run("chmod +x /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.sh")
     run(f"arch-chroot /mnt useradd -m -G wheel,sddm-bg -s /bin/zsh {username}")
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
     run(f"arch-chroot /mnt mkdir -p /usr/share/sddm/themes/wagashi/backgrounds")
@@ -505,9 +537,11 @@ def main():
     say("Installing dango...")
     run("mkdir -p /mnt/usr/share/wallpapers")
     run("cp -r /usr/share/wallpapers/Wagashi-Ayu-Light /mnt/usr/share/wallpapers/")
-    run("cp -r /usr/share/wallpapers/Wagashi-Ayu-Dark /mnt/usr/share/wallpapers/")
     run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
     run("chmod +x /mnt/usr/local/bin/dango")
+    run("mkdir -p /mnt/usr/lib/systemd/system-sleep")
+    run("cp /usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
+    run("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
 
     say("Applying Wagashi branding...")
     with open("/mnt/etc/os-release", "w") as f:

@@ -293,6 +293,26 @@ def purpose_packages(purpose):
     return " ".join(dedupe(official)), " ".join(dedupe(aur))
 
 # ── Base page ──────────────────────────────────────────────────────────────────
+def _host_gpu_packages():
+    result = subprocess.run("lspci -nn | grep -E 'VGA|3D|Display'", shell=True, capture_output=True, text=True)
+    lines = [l for l in result.stdout.strip().split("\n") if l]
+    official, aur = [], []
+    for line in lines:
+        upper = line.upper()
+        if "NVIDIA" in upper:
+            if any(x in upper for x in ("RTX", "GTX 16")):
+                official.append("nvidia-open-dkms")
+            elif any(x in upper for x in ("GTX 9", "GTX 10", "TITAN")):
+                official.append("nvidia-dkms")
+            else:
+                aur.append("nvidia-470xx-dkms")
+        elif "AMD" in upper or "ATI" in upper:
+            official += ["vulkan-radeon", "libva-mesa-driver"]
+        elif "INTEL" in upper:
+            official += ["vulkan-intel", "intel-media-driver"]
+    return " ".join(sorted(set(official))), " ".join(sorted(set(aur)))
+
+
 class BasePage(QWidget):
     def __init__(self, window):
         super().__init__()
@@ -1064,6 +1084,11 @@ class InstallWorker(QThread):
             "dolphin konsole python-pyqt6 plymouth"
         )
         extra_official, extra_aur = purpose_packages(d.get("purpose", "everyday"))
+        gpu_official, gpu_aur = _host_gpu_packages()
+        if gpu_official:
+            extra_official = f"{extra_official} {gpu_official}".strip()
+        if gpu_aur:
+            extra_aur = f"{extra_aur} {gpu_aur}".strip()
         self.run_cmd(f"pacstrap /mnt {base} {extra_official}".strip())
 
         self.status(T["INSTALL_CONFIG"], 70)
@@ -1097,6 +1122,14 @@ class InstallWorker(QThread):
 
         self.run_cmd(f"arch-chroot /mnt groupadd -f sddm-bg")
         self.status(T["INSTALL_USER"], 78)
+        self.run_cmd("mkdir -p /mnt/etc/skel/.config/plasma-workspace/shutdown")
+        self.run_cmd("cp /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc /mnt/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc")
+        self.run_cmd("cp /etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh /mnt/etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh")
+        self.run_cmd("cp /etc/skel/.config/kdeglobals /mnt/etc/skel/.config/kdeglobals")
+        self.run_cmd("mkdir -p /mnt/etc/skel/.config/autostart")
+        self.run_cmd("cp /etc/skel/.config/autostart/wagashi-set-wallpaper.sh /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.sh")
+        self.run_cmd("cp /etc/skel/.config/autostart/wagashi-set-wallpaper.desktop /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.desktop")
+        self.run_cmd("chmod +x /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.sh")
         self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel,sddm-bg -s /bin/zsh {username}")
         self.run_cmd(f"echo '{username}:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd(f"echo 'root:{d['password']}' | arch-chroot /mnt chpasswd")
@@ -1144,7 +1177,6 @@ class InstallWorker(QThread):
         )
         self.run_cmd("mkdir -p /mnt/usr/share/wallpapers")
         self.run_cmd("cp -r /usr/share/wallpapers/Wagashi-Ayu-Light /mnt/usr/share/wallpapers/")
-        self.run_cmd("cp -r /usr/share/wallpapers/Wagashi-Ayu-Dark /mnt/usr/share/wallpapers/")
 
         self.status(T["INSTALL_BRANDING"], 86)
         self.run_cmd("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
@@ -1183,6 +1215,9 @@ class InstallWorker(QThread):
         self.status(T["INSTALL_DANGO"], 93)
         self.run_cmd("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
         self.run_cmd("chmod +x /mnt/usr/local/bin/dango")
+        self.run_cmd("mkdir -p /mnt/usr/lib/systemd/system-sleep")
+        self.run_cmd("cp /usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
+        self.run_cmd("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
 
         self.status(T["INSTALL_SERVICES"], 94)
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")

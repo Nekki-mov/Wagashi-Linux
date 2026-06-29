@@ -1,0 +1,10 @@
+[General]
+ColorScheme=BreezeDark
+Name=Breeze Dark
+widgetStyle=Breeze
+
+[KDE]
+SingleClick=false
+
+[Icons]
+Theme=breeze-dark
