@@ -86,32 +86,46 @@ def help():
   Searches pacman and AUR automatically.
   No Flatpak. Intentionally.
     """)
-
 def install(pkg):
     say(f"Looking for {pkg}...")
     if is_live():
         say("Live system detected. Syncing repos first...")
         run("pacman -Sy")
-    result = run_filtered(f"pacman -S {pkg}")
+
+    confirm = input(f"Install {pkg}? [y/N] ").strip().lower()
+    if confirm != "y":
+        say("Okay, leaving it alone.")
+        return
+
+    result = run_filtered(f"pacman -S {pkg} --noconfirm")
     if hasattr(result, 'returncode') and result.returncode != 0:
         if has_yay():
             say(f"Couldn't find it there. Checking AUR...")
-            result = run_filtered(f"yay -S {pkg}")
+            confirm_aur = input(f"Install {pkg} from AUR instead? [y/N] ").strip().lower()
+            if confirm_aur != "y":
+                say("Okay, leaving it alone.")
+                return
+            result = run_filtered(f"yay -S {pkg} --noconfirm")
             if hasattr(result, 'returncode') and result.returncode != 0:
                 say(f"Couldn't find {pkg}. Maybe it doesn't exist, maybe it's you.")
         else:
             say(f"Couldn't find {pkg}. Maybe it doesn't exist, maybe it's you.")
     else:
         say(f"All set. {pkg} is ready.")
-
 def remove(pkg, with_deps=False):
+    confirm = input(f"Remove {pkg}? [y/N] ").strip().lower()
+    if confirm != "y":
+        say("Okay, leaving it alone.")
+        return
     say(f"Removing {pkg}...")
     flag = "-Rs" if with_deps else "-R"
-    result = run(f"pacman {flag} {pkg}")
+    result = run(f"pacman {flag} {pkg} --noconfirm")
     if result.returncode == 0:
         say("Gone. No judgment.")
     else:
         say(f"Couldn't find {pkg}. It may already be gone.")
+
+
 
 def sync():
     if is_live():
