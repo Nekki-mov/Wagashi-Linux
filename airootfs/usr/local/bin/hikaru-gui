@@ -1138,6 +1138,9 @@ class InstallWorker(QThread):
             '+ label {\n  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n'
             '  text = "your computer, always yours."\n  font = "wagashi-14.pf2"\n  color = "#333333"\n  align = "center"\n}\n\n'
             '+ boot_menu {\n  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n'
+        self.run_cmd("mkdir -p /mnt/usr/share/wallpapers")
+        self.run_cmd("cp -r /usr/share/wallpapers/Wagashi-Ayu-Light /mnt/usr/share/wallpapers/")
+        self.run_cmd("cp -r /usr/share/wallpapers/Wagashi-Ayu-Dark /mnt/usr/share/wallpapers/")
             '  item_font = "wagashi-14.pf2"\n  item_color = "#444444"\n'
             '  selected_item_color = "#e8a0a0"\n  selected_item_style = "bold"\n'
             '  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n  scrollbar = false\n}\n'

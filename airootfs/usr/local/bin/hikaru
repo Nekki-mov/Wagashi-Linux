@@ -503,6 +503,9 @@ def main():
         tf.write('# Wagashi Linux GRUB Theme\n# Silence is a design choice.\n\ntitle-text: ""\ndesktop-color: "#000000"\n\n+ label {\n  left = 50%-300\n  top = 38%\n  width = 600\n  height = 40\n  text = "Wagashi Linux"\n  font = "wagashi-36.pf2"\n  color = "#ffffff"\n  align = "center"\n}\n\n+ label {\n  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n  text = "your computer, always yours."\n  font = "wagashi-14.pf2"\n  color = "#333333"\n  align = "center"\n}\n\n+ boot_menu {\n  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n  item_font = "wagashi-14.pf2"\n  item_color = "#444444"\n  selected_item_color = "#e8a0a0"\n  selected_item_style = "bold"\n  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n  scrollbar = false\n}\n')
 
     say("Installing dango...")
+    run("mkdir -p /mnt/usr/share/wallpapers")
+    run("cp -r /usr/share/wallpapers/Wagashi-Ayu-Light /mnt/usr/share/wallpapers/")
+    run("cp -r /usr/share/wallpapers/Wagashi-Ayu-Dark /mnt/usr/share/wallpapers/")
     run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
     run("chmod +x /mnt/usr/local/bin/dango")
 
