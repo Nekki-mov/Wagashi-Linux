@@ -1084,6 +1084,16 @@ class InstallWorker(QThread):
         self.run_cmd(f"echo 'LANG={locale}' > /mnt/etc/locale.conf")
         if keyboard != "us":
             self.run_cmd(f"echo 'KEYMAP={keyboard}' > /mnt/etc/vconsole.conf")
+            X11_LAYOUT_MAP = {"uk": "gb", "pt-latin1": "pt"}
+            x11_layout = X11_LAYOUT_MAP.get(keyboard, keyboard)
+            self.write_file(
+                "/mnt/etc/X11/xorg.conf.d/00-keyboard.conf",
+                'Section "InputClass"\n'
+                '    Identifier "system-keyboard"\n'
+                '    MatchIsKeyboard "on"\n'
+                f'    Option "XkbLayout" "{x11_layout}"\n'
+                'EndSection\n'
+            )
 
         self.run_cmd(f"arch-chroot /mnt groupadd -f sddm-bg")
         self.status(T["INSTALL_USER"], 78)
@@ -1138,9 +1148,6 @@ class InstallWorker(QThread):
         self.run_cmd("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
         self.run_cmd("mkdir -p /mnt/usr/share/wagashi/wallpapers")
         self.run_cmd("cp -r /usr/share/wagashi/wallpapers/. /mnt/usr/share/wagashi/wallpapers/")
-        self.run_cmd("mkdir -p /mnt/usr/share/wallpapers")
-        self.run_cmd("cp -r /usr/share/wallpapers/Wagashi-Ayu-Light /mnt/usr/share/wallpapers/")
-        self.run_cmd("cp -r /usr/share/wallpapers/Wagashi-Ayu-Dark /mnt/usr/share/wallpapers/")
         self.run_cmd("cp /usr/local/bin/hikaru-gui /mnt/usr/local/bin/hikaru-gui")
         self.run_cmd("chmod +x /mnt/usr/local/bin/hikaru-gui")
         self.run_cmd("cp /usr/local/bin/hikaru /mnt/usr/local/bin/hikaru")

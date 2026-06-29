@@ -440,8 +440,20 @@ def main():
     run("arch-chroot /mnt locale-gen")
     run("echo 'LANG=en_US.UTF-8' > /mnt/etc/locale.conf")
 
+    X11_LAYOUT_MAP = {"uk": "gb", "pt-latin1": "pt"}
+
     if layout != "us":
         run(f"echo 'KEYMAP={layout}' > /mnt/etc/vconsole.conf")
+        x11_layout = X11_LAYOUT_MAP.get(layout, layout)
+        run("mkdir -p /mnt/etc/X11/xorg.conf.d")
+        with open("/mnt/etc/X11/xorg.conf.d/00-keyboard.conf", "w") as f:
+            f.write(
+                'Section "InputClass"\n'
+                '    Identifier "system-keyboard"\n'
+                '    MatchIsKeyboard "on"\n'
+                f'    Option "XkbLayout" "{x11_layout}"\n'
+                'EndSection\n'
+            )
 
     say("Creating your user...")
     run(f"arch-chroot /mnt groupadd -f sddm-bg")
@@ -491,9 +503,6 @@ def main():
         tf.write('# Wagashi Linux GRUB Theme\n# Silence is a design choice.\n\ntitle-text: ""\ndesktop-color: "#000000"\n\n+ label {\n  left = 50%-300\n  top = 38%\n  width = 600\n  height = 40\n  text = "Wagashi Linux"\n  font = "wagashi-36.pf2"\n  color = "#ffffff"\n  align = "center"\n}\n\n+ label {\n  left = 50%-300\n  top = 46%\n  width = 600\n  height = 20\n  text = "your computer, always yours."\n  font = "wagashi-14.pf2"\n  color = "#333333"\n  align = "center"\n}\n\n+ boot_menu {\n  left = 50%-160\n  top = 56%\n  width = 320\n  height = 140\n  item_font = "wagashi-14.pf2"\n  item_color = "#444444"\n  selected_item_color = "#e8a0a0"\n  selected_item_style = "bold"\n  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n  scrollbar = false\n}\n')
 
     say("Installing dango...")
-    run("mkdir -p /mnt/usr/share/wallpapers")
-    run("cp -r /usr/share/wallpapers/Wagashi-Ayu-Light /mnt/usr/share/wallpapers/")
-    run("cp -r /usr/share/wallpapers/Wagashi-Ayu-Dark /mnt/usr/share/wallpapers/")
     run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
     run("chmod +x /mnt/usr/local/bin/dango")
 
