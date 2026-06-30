@@ -1,6 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Wagashi Set Wallpaper
-Exec=/home/%u/.config/autostart/wagashi-set-wallpaper.sh
-X-KDE-AutostartScript=true
-X-KDE-autostart-after=panel

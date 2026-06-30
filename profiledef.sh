@@ -23,6 +23,7 @@ file_permissions=(
   ["/usr/local/bin/livecd-sound"]="0:0:755"
   ["/usr/local/bin/hikaru"]="0:0:755"
   ["/usr/local/bin/dango"]="0:0:755"
+  ["/usr/local/bin/wagashi-firstrun"]="0:0:755"
   ["/usr/local/bin/hikaru-gui"]="0:0:755"
   ["/root/.config/autostart/hikaru.desktop"]="0:0:644"
   ["/root/Desktop/hikaru.desktop"]="0:0:755"

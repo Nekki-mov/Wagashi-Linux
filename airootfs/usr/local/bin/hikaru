@@ -485,10 +485,6 @@ def main():
     run("cp /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc /mnt/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc")
     run("cp /etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh /mnt/etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh")
     run("cp /etc/skel/.config/kdeglobals /mnt/etc/skel/.config/kdeglobals")
-    run("mkdir -p /mnt/etc/skel/.config/autostart")
-    run("cp /etc/skel/.config/autostart/wagashi-set-wallpaper.sh /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.sh")
-    run("cp /etc/skel/.config/autostart/wagashi-set-wallpaper.desktop /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.desktop")
-    run("chmod +x /mnt/etc/skel/.config/autostart/wagashi-set-wallpaper.sh")
     run(f"arch-chroot /mnt useradd -m -G wheel,sddm-bg -s /bin/zsh {username}")
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
     run(f"arch-chroot /mnt mkdir -p /usr/share/sddm/themes/wagashi/backgrounds")
@@ -539,6 +535,16 @@ def main():
     run("cp -r /usr/share/wallpapers/Wagashi-Ayu-Light /mnt/usr/share/wallpapers/")
     run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
     run("chmod +x /mnt/usr/local/bin/dango")
+    run("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
+    run("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
+    run(f"mkdir -p /mnt/home/{username}/.config/autostart")
+    with open(f"/mnt/home/{username}/.config/autostart/wagashi-firstrun.desktop", "w") as f:
+        f.write(
+            "[Desktop Entry]\nType=Application\nName=Wagashi First Run\n"
+            "Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\n"
+            "X-KDE-autostart-after=panel\n"
+        )
+    run(f"arch-chroot /mnt chown -R {username}:{username} /home/{username}/.config")
     run("mkdir -p /mnt/usr/lib/systemd/system-sleep")
     run("cp /usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
     run("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")

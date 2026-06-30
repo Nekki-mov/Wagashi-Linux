@@ -1,0 +1,13 @@
+#!/bin/bash
+[ -f "$HOME/.wagashi-setup-done" ] && exit 0
+sleep 4
+WALLPAPER=$(find /usr/share/wallpapers/Wagashi-Ayu-Light/contents/images -type f \( -iname "*.jpg" -o -iname "*.png" \) | sort -V | tail -n1)
+if [ -n "$WALLPAPER" ]; then
+    plasma-apply-wallpaperimage "$WALLPAPER"
+    sleep 2
+    kwriteconfig6 --file plasma-org.kde.plasma.desktop-appletsrc \
+        --group "Containments" --group "1" --group "Wallpaper" \
+        --group "org.kde.image" --group "General" \
+        --key "Image" "file://$WALLPAPER"
+fi
+touch "$HOME/.wagashi-setup-done"
