@@ -46,7 +46,7 @@ As After The First Boot begins, this is what exists:
 
 | Edition | Status | Wallpaper | i18n |
 |---|---|---|---|
-| **Ayu** (KDE, 2026) | ✅ Functional | Pending | ✅ EN/ES/JA |
+| **Ayu** (KDE, 2026) | ✅ Functional | ✅ Original art (the lamps) | ✅ EN/ES/JA |
 | **Mishio** (WindowMaker, 1996) | ✅ Functional | ✅ Original art | ✅ EN/ES/JA |
 | **Sayuri** (Monochrome, 2077) | ✅ Functional | ✅ Original art | ✅ EN/ES/JA |
 | **Nayuki** (LXQt, 2008) | ✅ Functional | ✅ Original art | ✅ EN/ES/JA |
@@ -150,6 +150,33 @@ The humor will be earned.
 
 ---
 
+## Log — the wallpaper that fought back
+
+*Late June 2026*
+
+The Ayu wallpaper bug deserves its own paragraph, because it took an entire night and taught us more about how Plasma actually works than any documentation would have.
+
+What looked like a one-line fix turned out to be five separate failures, stacked:
+
+1. A stale `Wagashi-Ayu-Dark` package was still being installed by both `hikaru` and `hikaru-gui`, long after the decision had been made to keep only one wallpaper — the lamps, which work beautifully in both light and dark. Dark was removed entirely, from the repo and from both installers.
+2. The `appletsrc` skel file was never reaching the installed system, because `useradd -m` copies from `/mnt/etc/skel/`, not from the live ISO's skel — and nothing was populating `/mnt/etc/skel/` before the user was created. Fixed by copying it explicitly, right before `useradd -m`, in both installers.
+3. `LookAndFeelPackage=org.kde.breezedark.desktop` in `kdeglobals` was silently overriding the wallpaper with Breeze Dark's own default — solved by keeping `ColorScheme=BreezeDark` for the dark theme, without pulling in the full look-and-feel package.
+4. Plasma assigns containment numbers dynamically. A hardcoded `[Containments][1]` in the skel `appletsrc` doesn't reliably match what Plasma generates on first login, which is why direct config editing kept failing.
+5. The actual fix had already been written once before — for Sayuri, back on May 31st, as `wagashi-firstrun`: a small script that waits for the desktop to settle, then applies the wallpaper via `plasma-apply-wallpaperimage` with a `kwriteconfig6` fallback, registered as an autostart entry pointing at a fixed binary. It was ported to Ayu, adapted for its package-style wallpaper structure (`contents/images/`, not a flat file), wired into both `hikaru` and `hikaru-gui`, and registered in `profiledef.sh`.
+
+Confirmed working via `fastfetch` and a clean install: Breeze Dark active, the lamps on the desktop, from the very first login.
+
+**The lesson, again:** when something has already been solved once in another edition, look there first. We didn't, and it cost a night.
+
+**Still open, intentionally parked:** `sync-sddm-wallpaper.sh`, which is meant to mirror the desktop wallpaper onto the SDDM login screen, doesn't currently work — and it's not worth chasing. The SDDM theme is getting fully replaced during ricing, with its own background baked into the QML. Whether that future theme should sync dynamically with the desktop wallpaper or stay fixed is a ricing decision, not a bug.
+
+### Also shipped this session
+
+- **GPU driver autodetection** (`_host_gpu_packages()`) in both installers: reads `lspci` and installs the right driver for the detected card — `nvidia-open-dkms` for RTX/GTX 16xx, `nvidia-dkms` for GTX 900–10xx/Titan, `nvidia-470xx-dkms` (AUR) for older NVIDIA, `vulkan-radeon` + `libva-mesa-driver` for AMD, `vulkan-intel` + `intel-media-driver` for Intel. No prompts, no visible extra steps — it just happens during install.
+- **Broadcom WiFi suspend/resume hook** (`wagashi-broadcom-wifi-fix`), a `systemd-sleep` script that reloads `brcmfmac` after resume. This targets a known issue on the MacBook Pro 12,1 and similar hardware with the Broadcom BCM4352 chipset. Confirmed: `brcmfmac` (in-kernel) is the correct driver for this hardware — `broadcom-wl` would be a regression, not an upgrade, and was deliberately not used.
+
+---
+
 ## Ricing plan
 
 This is what we're building toward. Not a deadline — a direction.
@@ -157,7 +184,7 @@ This is what we're building toward. Not a deadline — a direction.
 ### Wagashi Ayu (KDE, 2026)
 The primary edition. The one people will screenshot.
 
-- [ ] Wallpaper — original art (boceto: Lawson at night, snow, two silhouettes, dangos on a bench)
+- [x] Wallpaper — the lamps. Final. Works in both light and dark.
 - [ ] KDE color scheme — Clannad · Sunfield or custom Wagashi palette
 - [ ] SDDM theme — Wagashi branded, warm
 - [ ] Conky — optional, warm tones, minimal
