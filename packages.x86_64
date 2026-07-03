@@ -51,5 +51,5 @@ firefox
 konsole
 python-pyqt6
 noto-fonts-cjk
-qdbus-qt6
-qdbus-qt6
+qt6-tools
+qt6-tools
