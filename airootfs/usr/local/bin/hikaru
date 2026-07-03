@@ -520,11 +520,16 @@ def main():
 
     say(T["INSTALL_BRANDING"])
     with open("/mnt/etc/os-release", "w") as f:
-        f.write('NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n')
+        f.write('NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Mishio (Nostalgia)"\n')
+        f.write('VERSION="1.0 (Natto)"\nVERSION_ID="1.0"\nVARIANT_ID=mishio\n')
         f.write('ID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\n')
-        f.write('HOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n')
+        f.write('HOME_URL="https://wagashi.neklair.es"\nLOGO=wagashi\n')
     with open("/mnt/etc/motd", "w") as f:
-        f.write('Welcome to Wagashi Linux — Nayuki (LXQt).\nYour computer, always yours.\n')
+        f.write('Welcome to Wagashi Linux — Mishio (Nostalgia).\nYour computer, always yours.\n')
+    run("mkdir -p /mnt/usr/share/pixmaps")
+    run("mkdir -p /mnt/usr/share/icons/hicolor/scalable/apps")
+    run("cp /usr/share/pixmaps/wagashi.svg /mnt/usr/share/pixmaps/wagashi.svg")
+    run("cp /usr/share/icons/hicolor/scalable/apps/wagashi.svg /mnt/usr/share/icons/hicolor/scalable/apps/wagashi.svg")
 
     say(T["INSTALL_PLYMOUTH"])
     run("mkdir -p /mnt/usr/share/plymouth/themes/wagashi")
