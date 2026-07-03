@@ -397,7 +397,7 @@ def main():
         "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation "
         "xorg-server xorg-xinit xorg-xrandr "
         "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
-        "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs gvfs"
+        "python-pyqt6 plymouth mochi sakura pcmanfm-qt xdg-user-dirs gvfs"
     )
     extra_pkgs = purpose_packages(purpose)
     run(f"pacstrap /mnt {base_pkgs} {extra_pkgs}".strip())
