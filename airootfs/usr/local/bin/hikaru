@@ -445,7 +445,7 @@ def main():
         "sddm sddm-kcm discover kscreen powerdevil bluedevil kwallet-pam "
         "breeze breeze-gtk kde-gtk-config "
         "dolphin konsole "
-        "python-pyqt6 plymouth"
+        "python-pyqt6 plymouth mochi"
     )
     extra_official, extra_aur = purpose_packages(purpose)
     gpu_official, gpu_aur = _host_gpu_packages()
