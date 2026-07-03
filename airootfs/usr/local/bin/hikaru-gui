@@ -30,12 +30,11 @@ EDITION = detect_edition()
 if EDITION == "sayuri":
     COLORS = {
         "bg":           "#000000",
-        "card":         "#111111",
-        "surface":      "#1a1a1a",
-        "border":       "#2a2a2a",
+        "surface":      "#080808",
+        "border":       "#1a1a1a",
         "text":         "#e8e8e8",
-        "text_dim":     "#686868",
-        "text_ghost":   "#404040",
+        "text_dim":     "#484848",
+        "text_ghost":   "#282828",
         "accent":       "#e8a0a0",
         "accent_hover": "#f0b8b8",
         "accent_dark":  "#c07070",
@@ -45,8 +44,7 @@ if EDITION == "sayuri":
     }
 elif EDITION == "nayuki":
     COLORS = {
-        "bg":           "#e8d0b0",
-        "card":         "#f0d8c0",
+        "bg":           "#f0d8c0",
         "surface":      "#e8c8b0",
         "border":       "#c8a888",
         "text":         "#3a2a0a",
@@ -61,12 +59,13 @@ elif EDITION == "nayuki":
     }
 else:
     COLORS = {
-        "bg":           "#0e0e12",
-        "surface":      "#16161e",
-        "border":       "#2a2a3a",
-        "text":         "#ece6d8",
-        "text_dim":     "#6a6478",
-        "text_ghost":   "#2e2a38",
+        "bg":           "#060a12",
+        "card":         "#1a2540",
+        "surface":      "#1c2640",
+        "border":       "#2a3a55",
+        "text":         "#f0e8d8",
+        "text_dim":     "#8a9ab8",
+        "text_ghost":   "#6a7a9a",
         "accent":       "#d4a574",
         "accent_hover": "#e8bc8c",
         "accent_dark":  "#a87848",
@@ -109,7 +108,7 @@ STYLE = f"""
     QLabel#error  {{ color: {COLORS['error']};  font-size: 13px; }}
     QPushButton#primary {{
         background-color: {COLORS['accent']};
-        color: {'#f8f8f8' if EDITION == 'sayuri' else '#3a2a0a'};
+        color: #f0e8d8;
         border: none;
         border-radius: 8px;
         padding: 12px 40px;
@@ -117,8 +116,8 @@ STYLE = f"""
         font-weight: 600;
         letter-spacing: 1px;
     }}
-    QPushButton#primary:hover  {{ background-color: {COLORS['accent_hover']}; }}
-    QPushButton#primary:pressed {{ background-color: {COLORS['accent_dark']}; }}
+    QPushButton#primary:hover  {{ background-color: {COLORS['accent_hover']}; color: #f0e8d8; }}
+    QPushButton#primary:pressed {{ background-color: {COLORS['accent_dark']}; color: #f0e8d8; }}
     QPushButton#secondary {{
         background-color: transparent;
         color: {COLORS['text']};
@@ -140,6 +139,7 @@ STYLE = f"""
         min-width: 160px;
     }}
     QPushButton#lang:hover {{
+        color: {COLORS['text']};
         border-color: {COLORS['accent']};
         background-color: {COLORS['border']};
     }}
@@ -235,14 +235,84 @@ def _resolve_gpu_auto(gpu_choice, ask_fn=None):
     return None
 
 def purpose_packages(purpose):
-    pkgs = []
-    if purpose in ("everyday", "everything"):   pkgs += ["firefox", "vlc"]
-    if purpose in ("creative", "gaming_creative", "everything"): pkgs += ["krita", "kdenlive", "obs-studio", "inkscape"]
-    if purpose in ("dev", "everything"):         pkgs += ["code", "docker", "python", "nodejs", "npm"]
-    if purpose in ("gaming", "gaming_creative", "everything"):   pkgs += ["steam", "lutris", "wine", "winetricks", "gamemode"]
-    return " ".join(pkgs)
+    """Returns (official_pkgs_str, aur_pkgs_str)"""
+    always_official = [
+        "htop", "btop", "gparted", "keepassxc", "okular", "ark", "spectacle",
+        "cups", "system-config-printer", "wine", "winetricks",
+    ]
+    always_aur = ["proton-ge-custom-bin"]
+
+    everyday_official = ["firefox", "libreoffice-fresh", "thunderbird", "vlc", "gimp", "gwenview"]
+    everyday_aur = []
+
+    creative_official = [
+        "krita", "gimp", "inkscape", "kdenlive", "obs-studio", "blender",
+        "audacity", "scribus", "musescore",
+    ]
+    creative_aur = ["davinci-resolve"]
+
+    dev_official = [
+        "code", "git", "base-devel", "docker", "docker-compose", "neovim",
+        "github-cli", "nodejs", "dbeaver", "meld",
+    ]
+    dev_aur = ["postman-bin"]
+
+    gaming_official = ["steam", "lutris", "gamemode", "mangohud", "discord"]
+    gaming_aur = ["heroic-games-launcher-bin"]
+
+    mapping = {
+        "everyday":        ([everyday_official], [everyday_aur]),
+        "creative":        ([creative_official], [creative_aur]),
+        "dev":             ([dev_official], [dev_aur]),
+        "gaming":          ([gaming_official], [gaming_aur]),
+        "gaming_creative": ([gaming_official, creative_official], [gaming_aur, creative_aur]),
+        "creative_dev":    ([creative_official, dev_official], [creative_aur, dev_aur]),
+        "everything":      ([everyday_official, creative_official, dev_official, gaming_official],
+                             [everyday_aur, creative_aur, dev_aur, gaming_aur]),
+    }
+
+    off_lists, aur_lists = mapping.get(purpose, ([everyday_official], [everyday_aur]))
+
+    official = list(always_official)
+    for o in off_lists:
+        official += o
+
+    aur = list(always_aur)
+    for a in aur_lists:
+        aur += a
+
+    def dedupe(lst):
+        seen = set()
+        out = []
+        for p in lst:
+            if p not in seen:
+                seen.add(p)
+                out.append(p)
+        return out
+
+    return " ".join(dedupe(official)), " ".join(dedupe(aur))
 
 # ── Base page ──────────────────────────────────────────────────────────────────
+def _host_gpu_packages():
+    result = subprocess.run("lspci -nn | grep -E 'VGA|3D|Display'", shell=True, capture_output=True, text=True)
+    lines = [l for l in result.stdout.strip().split("\n") if l]
+    official, aur = [], []
+    for line in lines:
+        upper = line.upper()
+        if "NVIDIA" in upper:
+            if any(x in upper for x in ("RTX", "GTX 16")):
+                official.append("nvidia-open-dkms")
+            elif any(x in upper for x in ("GTX 9", "GTX 10", "TITAN")):
+                official.append("nvidia-dkms")
+            else:
+                aur.append("nvidia-470xx-dkms")
+        elif "AMD" in upper or "ATI" in upper:
+            official += ["vulkan-radeon", "libva-mesa-driver"]
+        elif "INTEL" in upper:
+            official += ["vulkan-intel", "intel-media-driver"]
+    return " ".join(sorted(set(official))), " ".join(sorted(set(aur)))
+
+
 class BasePage(QWidget):
     def __init__(self, window):
         super().__init__()
@@ -251,6 +321,7 @@ class BasePage(QWidget):
         self._outer.setContentsMargins(0, 0, 0, 0)
         self._outer.setSpacing(0)
 
+        # Card/pill — floats over the background
         card_color = COLORS.get("card", COLORS["surface"])
         self._card = QWidget()
         self._card.setStyleSheet(
@@ -679,6 +750,7 @@ class PurposePage(BasePage):
             ("dev",             T["PURPOSE_DEV"]),
             ("gaming",          T["PURPOSE_GAMING"]),
             ("gaming_creative", T["PURPOSE_GAMING_CREATIVE"]),
+            ("creative_dev",    T["PURPOSE_CREATIVE_DEV"]),
             ("everything",      T["PURPOSE_EVERYTHING"]),
         ]
 
@@ -882,6 +954,7 @@ class SummaryPage(BasePage):
             "dev":             T["PURPOSE_DEV"].split("—")[0].strip(),
             "gaming":          T["PURPOSE_GAMING"].split("—")[0].strip(),
             "gaming_creative": T["PURPOSE_GAMING_CREATIVE"].split("—")[0].strip(),
+            "creative_dev":    T["PURPOSE_CREATIVE_DEV"].split("—")[0].strip(),
             "everything":      T["PURPOSE_EVERYTHING"].split("—")[0].strip(),
         }
         layout_map = {
@@ -1004,12 +1077,19 @@ class InstallWorker(QThread):
             "zsh nano git curl wget htop unzip tar man-db "
             "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
             "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
-            "xorg-server xorg-xinit xorg-xrandr "
-            "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
-            "python-pyqt6 plymouth mochi sakura pcmanfm-qt xdg-user-dirs gvfs"
+            "xorg-server xorg-xwayland "
+            "plasma-desktop plasma-pa plasma-nm plasma-firewall plasma-systemmonitor "
+            "sddm sddm-kcm discover kscreen powerdevil bluedevil kwallet-pam "
+            "breeze breeze-gtk kde-gtk-config "
+            "dolphin konsole python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils"
         )
-        extra = purpose_packages(d.get("purpose", "everyday"))
-        self.run_cmd(f"pacstrap /mnt {base} {extra}".strip())
+        extra_official, extra_aur = purpose_packages(d.get("purpose", "everyday"))
+        gpu_official, gpu_aur = _host_gpu_packages()
+        if gpu_official:
+            extra_official = f"{extra_official} {gpu_official}".strip()
+        if gpu_aur:
+            extra_aur = f"{extra_aur} {gpu_aur}".strip()
+        self.run_cmd(f"pacstrap /mnt {base} {extra_official}".strip())
 
         self.status(T["INSTALL_CONFIG"], 70)
         self.run_cmd("genfstab -U /mnt >> /mnt/etc/fstab")
@@ -1029,12 +1109,43 @@ class InstallWorker(QThread):
         self.run_cmd(f"echo 'LANG={locale}' > /mnt/etc/locale.conf")
         if keyboard != "us":
             self.run_cmd(f"echo 'KEYMAP={keyboard}' > /mnt/etc/vconsole.conf")
+            X11_LAYOUT_MAP = {"uk": "gb", "pt-latin1": "pt"}
+            x11_layout = X11_LAYOUT_MAP.get(keyboard, keyboard)
+            self.write_file(
+                "/mnt/etc/X11/xorg.conf.d/00-keyboard.conf",
+                'Section "InputClass"\n'
+                '    Identifier "system-keyboard"\n'
+                '    MatchIsKeyboard "on"\n'
+                f'    Option "XkbLayout" "{x11_layout}"\n'
+                'EndSection\n'
+            )
 
+        self.run_cmd(f"arch-chroot /mnt groupadd -f sddm-bg")
         self.status(T["INSTALL_USER"], 78)
-        self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel -s /bin/zsh {username}")
+        self.run_cmd("mkdir -p /mnt/etc/skel/.config/plasma-workspace/shutdown")
+        self.run_cmd("cp /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc /mnt/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc")
+        self.run_cmd("cp /etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh /mnt/etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh")
+        self.run_cmd("cp /etc/skel/.config/kdeglobals /mnt/etc/skel/.config/kdeglobals")
+        self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel,sddm-bg -s /bin/zsh {username}")
         self.run_cmd(f"echo '{username}:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd(f"echo 'root:{d['password']}' | arch-chroot /mnt chpasswd")
+        self.run_cmd(f"arch-chroot /mnt mkdir -p /usr/share/sddm/themes/wagashi/backgrounds")
+        self.run_cmd(f"arch-chroot /mnt chgrp sddm-bg /usr/share/sddm/themes/wagashi/backgrounds")
+        self.run_cmd(f"arch-chroot /mnt chmod 775 /usr/share/sddm/themes/wagashi/backgrounds")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
+
+        if extra_aur:
+            self.status(T.get("INSTALL_AUR", "Setting up a few extra things..."), 84)
+            self.run_cmd("arch-chroot /mnt pacman -S --noconfirm --needed git base-devel")
+            self.run_cmd(
+                f"arch-chroot /mnt su {username} -c "
+                f"\"git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && "
+                f"cd /tmp/yay-bin && makepkg -si --noconfirm\""
+            )
+            self.run_cmd(
+                f"arch-chroot /mnt su {username} -c "
+                f"\"yay -S --noconfirm --needed {extra_aur}\""
+            )
 
         self.status(T["INSTALL_BOOTLOADER"], 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
@@ -1060,6 +1171,8 @@ class InstallWorker(QThread):
             '  selected_item_color = "#e8a0a0"\n  selected_item_style = "bold"\n'
             '  item_height = 32\n  item_padding = 0\n  item_spacing = 4\n  scrollbar = false\n}\n'
         )
+        self.run_cmd("mkdir -p /mnt/usr/share/wallpapers")
+        self.run_cmd("cp -r /usr/share/wallpapers/Wagashi-Ayu-Light /mnt/usr/share/wallpapers/")
 
         self.status(T["INSTALL_BRANDING"], 86)
         self.run_cmd("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
@@ -1072,24 +1185,17 @@ class InstallWorker(QThread):
         self.run_cmd("chmod +x /mnt/usr/local/bin/hikaru")
         self.run_cmd("cp /usr/local/bin/hikaru_strings.py /mnt/usr/local/bin/hikaru_strings.py")
 
-        self.run_cmd("mkdir -p /mnt/etc/lightdm")
-        self.write_file("/mnt/etc/lightdm/lightdm.conf",
-            "[LightDM]\nallow-guest=false\n\n[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nsession-wrapper=/etc/lightdm/Xsession\n"
+        self.run_cmd("mkdir -p /mnt/etc/sddm.conf.d")
+        self.write_file("/mnt/etc/sddm.conf.d/wagashi.conf",
+            "[Theme]\nCurrent=breeze\n\n[Autologin]\nRelogin=false\n"
         )
-        self.write_file("/mnt/etc/lightdm/Xsession",
-            "#!/bin/sh\n"
-            "[ -z \"$DBUS_SESSION_BUS_ADDRESS\" ] && eval $(dbus-launch --sh-syntax --exit-with-session)\n"
-            "xdg-user-dirs-update\n"
-            "exec startlxqt\n"
-        )
-        self.run_cmd("chmod 755 /mnt/etc/lightdm/Xsession")
 
         self.write_file("/mnt/etc/os-release",
-            'NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n'
+            'NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Sayuri (Monochrome)"\nVARIANT_ID=sayuri\n'
             'ID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\n'
             'HOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n'
         )
-        self.write_file("/mnt/etc/motd", "Welcome to Wagashi Linux — Nayuki (LXQt).\nYour computer, always yours.\n")
+        self.write_file("/mnt/etc/motd", "Welcome to Wagashi Linux — Sayuri (Monochrome).\nYour computer, always yours.\n")
 
         self.status(T["INSTALL_PLYMOUTH"], 88)
         self.run_cmd("mkdir -p /mnt/usr/share/plymouth/themes/wagashi")
@@ -1105,13 +1211,15 @@ class InstallWorker(QThread):
         self.status(T["INSTALL_DANGO"], 93)
         self.run_cmd("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
         self.run_cmd("chmod +x /mnt/usr/local/bin/dango")
+        self.run_cmd("mkdir -p /mnt/usr/lib/systemd/system-sleep")
+        self.run_cmd("cp /usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
+        self.run_cmd("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
 
         self.status(T["INSTALL_SERVICES"], 94)
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")
-        self.run_cmd("arch-chroot /mnt systemctl enable lightdm")
+        self.run_cmd("arch-chroot /mnt systemctl enable sddm")
         self.run_cmd("arch-chroot /mnt systemctl enable bluetooth")
         self.run_cmd("arch-chroot /mnt systemctl enable cups")
-        self.run_cmd("arch-chroot /mnt systemctl --global enable gvfs-daemon", check=False)
 
         if d.get("firewall"):
             self.run_cmd("pacstrap /mnt ufw")
@@ -1132,7 +1240,8 @@ class InstallWorker(QThread):
         self.run_cmd(f"mkdir -p {home}/.config/autostart")
         self.write_file(f"{home}/.config/autostart/wagashi-firstrun.desktop",
             "[Desktop Entry]\nType=Application\nName=Wagashi First Run\n"
-            "Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\nX-LXQT-Need-Tray=false\n"
+            "Exec=/usr/local/bin/wagashi-firstrun\nIcon=dialog-scripts\n"
+            "X-KDE-autostart-after=panel\n"
         )
         self.write_file(f"{home}/.zshrc",
             'pierogi() { echo "O KURWA"; }\n'
