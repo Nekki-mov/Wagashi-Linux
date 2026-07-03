@@ -378,9 +378,9 @@ class HikaruWindow(QMainWindow):
             self.stack.removeWidget(page)
         self.main_pages = [
             WelcomePage(self),
+            KeyboardPage(self),
             NetworkPage(self),
             UserPage(self),
-            KeyboardPage(self),
             TimezonePage(self),
             PurposePage(self),
             DiskPage(self),
@@ -707,6 +707,10 @@ class KeyboardPage(BasePage):
             if btn.isChecked():
                 self.window.data["keyboard"] = self.other_input.text().strip() or "us" if key == "other" else key
                 break
+        layout = self.window.data.get("keyboard", "us")
+        x11_map = {"es": "es", "uk": "gb", "fr": "fr", "de": "de", "it": "it", "pt-latin1": "pt", "jp106": "jp", "us": "us"}
+        x11_layout = x11_map.get(layout, layout)
+        subprocess.run(["setxkbmap", x11_layout], capture_output=True)
         self.window.next_page()
 
 
