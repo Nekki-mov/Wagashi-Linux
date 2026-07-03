@@ -1,0 +1,13 @@
+[Layout]
+DisplayNames=,,,,,,,
+LayoutList=us,es,gb,fr,de,it,pt,jp
+Model=pc101
+Options=
+ResetOldOptions=true
+ShowFlag=false
+ShowLabel=true
+ShowLayoutIndicator=true
+ShowSingle=false
+SwitchMode=Global
+UseConfigFile=true
+VariantList=,,,,,,,

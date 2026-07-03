@@ -761,9 +761,10 @@ class KeyboardPage(BasePage):
         layout = self.window.data.get("keyboard", "us")
         x11_map = {"es": "es", "uk": "gb", "fr": "fr", "de": "de", "it": "it", "pt-latin1": "pt", "jp106": "jp", "us": "us"}
         x11_layout = x11_map.get(layout, layout)
+        layout_index = {"us": 0, "es": 1, "gb": 2, "fr": 3, "de": 4, "it": 5, "pt": 6, "jp": 7}.get(x11_layout, 0)
         subprocess.run(["setxkbmap", x11_layout], capture_output=True)
         subprocess.run(["localectl", "set-x11-keymap", x11_layout], capture_output=True)
-        subprocess.run(["qdbus6", "org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts.setLayout", x11_layout], capture_output=True)
+        subprocess.run(["qdbus6", "org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts.setLayout", str(layout_index)], capture_output=True)
         self.window.next_page()
 
 
@@ -1203,6 +1204,7 @@ class InstallWorker(QThread):
         self.run_cmd("cp /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc /mnt/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc")
         self.run_cmd("cp /etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh /mnt/etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh")
         self.run_cmd("cp /etc/skel/.config/kdeglobals /mnt/etc/skel/.config/kdeglobals")
+        self.run_cmd("cp /etc/skel/.config/kxkbrc /mnt/etc/skel/.config/kxkbrc")
         self.run_cmd(f"arch-chroot /mnt useradd -m -G wheel,sddm-bg -s /bin/zsh {username}")
         self.run_cmd(f"echo '{username}:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd(f"echo 'root:{d['password']}' | arch-chroot /mnt chpasswd")
