@@ -1,0 +1,11 @@
+#!/bin/bash
+# Recarga brcmfmac tras resume - bug conocido en MacBookPro12,1 y hardware Broadcom BCM4352 similar
+case "$1" in
+    post)
+        if lsmod | grep -q brcmfmac; then
+            modprobe -r brcmfmac
+            sleep 1
+            modprobe brcmfmac
+        fi
+        ;;
+esac
