@@ -1262,10 +1262,15 @@ class InstallWorker(QThread):
         )
 
         self.write_file("/mnt/etc/os-release",
-            'NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Sayuri (Monochrome)"\nVARIANT_ID=sayuri\n'
+            'NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Sayuri (Monochrome)"\n'
+            'VERSION="1.0 (Natto)"\nVERSION_ID="1.0"\nVARIANT_ID=sayuri\n'
             'ID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\n'
-            'HOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n'
+            'HOME_URL="https://wagashi.neklair.es"\nLOGO=wagashi\n'
         )
+        self.run_cmd("mkdir -p /mnt/usr/share/pixmaps")
+        self.run_cmd("mkdir -p /mnt/usr/share/icons/hicolor/scalable/apps")
+        self.run_cmd("cp /usr/share/pixmaps/wagashi.svg /mnt/usr/share/pixmaps/wagashi.svg")
+        self.run_cmd("cp /usr/share/icons/hicolor/scalable/apps/wagashi.svg /mnt/usr/share/icons/hicolor/scalable/apps/wagashi.svg")
         self.write_file("/mnt/etc/motd", "Welcome to Wagashi Linux — Sayuri (Monochrome).\nYour computer, always yours.\n")
 
         self.status(T["INSTALL_PLYMOUTH"], 88)
