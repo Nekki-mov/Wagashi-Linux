@@ -187,6 +187,25 @@ def setup_passthrough(gpu_choice):
     say(T["USHIO_READY"].format(vendor=vendor.upper(), addr=pci_addr))
 
 # ── Purpose packages ──────────────────────────────────────────────────────────
+def _host_gpu_packages():
+    result = run("lspci -nn | grep -E 'VGA|3D|Display'", capture=True)
+    lines = [l for l in result.stdout.strip().split("\n") if l]
+    official, aur = [], []
+    for line in lines:
+        upper = line.upper()
+        if "NVIDIA" in upper:
+            if any(x in upper for x in ("RTX", "GTX 16")):
+                official.append("nvidia-open-dkms")
+            elif any(x in upper for x in ("GTX 9", "GTX 10", "TITAN")):
+                official.append("nvidia-dkms")
+            else:
+                aur.append("nvidia-470xx-dkms")
+        elif "AMD" in upper or "ATI" in upper:
+            official += ["vulkan-radeon", "libva-mesa-driver"]
+        elif "INTEL" in upper:
+            official += ["vulkan-intel", "intel-media-driver"]
+    return " ".join(sorted(set(official))), " ".join(sorted(set(aur)))
+
 def purpose_packages(purpose):
     base = []
     if purpose in ("everyday", "everything"):
@@ -395,12 +414,17 @@ def main():
         "zsh nano git curl wget htop unzip tar man-db "
         "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
         "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
-        "xorg-server xorg-xinit xorg-xrandr "
-        "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
-        "python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils sakura pcmanfm-qt xdg-user-dirs gvfs"
+        "xorg-server xorg-xinit xorg-xrandr xorg-xsetroot xorg-xauth xorg-xhost "
+        "windowmaker feh rofi rxvt-unicode xterm imlib2 xarchiver mousepad "
+        "python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils"
     )
-    extra_pkgs = purpose_packages(purpose)
-    run(f"pacstrap /mnt {base_pkgs} {extra_pkgs}".strip())
+    extra_official, extra_aur = purpose_packages(purpose)
+    gpu_official, gpu_aur = _host_gpu_packages()
+    if gpu_official:
+        extra_official = f"{extra_official} {gpu_official}".strip()
+    if gpu_aur:
+        extra_aur = f"{extra_aur} {gpu_aur}".strip()
+    run(f"pacstrap /mnt {base_pkgs} {extra_official}".strip())
 
     say(T["INSTALL_CONFIG"])
     run("genfstab -U /mnt >> /mnt/etc/fstab")
@@ -432,15 +456,11 @@ def main():
     # wagashi-firstrun autostart — eliminado de aquí, se escribe después del chown
 
     # LightDM config
-    run("mkdir -p /mnt/etc/lightdm")
-    with open("/mnt/etc/lightdm/lightdm.conf", "w") as f:
-        f.write("[LightDM]\nallow-guest=false\n\n[Seat:*]\ngreeter-session=lightdm-gtk-greeter\nsession-wrapper=/etc/lightdm/Xsession\n")
-    with open("/mnt/etc/lightdm/Xsession", "w") as f:
+    with open(f"/mnt/home/{username}/.xinitrc", "w") as f:
         f.write("#!/bin/sh\n")
-        f.write("[ -z \"$DBUS_SESSION_BUS_ADDRESS\" ] && eval $(dbus-launch --sh-syntax --exit-with-session)\n")
-        f.write("xdg-user-dirs-update\n")
-        f.write("exec startlxqt\n")
-    run("chmod 755 /mnt/etc/lightdm/Xsession")
+        f.write("exec wmaker\n")
+    run(f"chmod +x /mnt/home/{username}/.xinitrc")
+    run(f"arch-chroot /mnt chown {username}:{username} /home/{username}/.xinitrc")
 
     # copiar instaladores al sistema
     run("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
@@ -483,6 +503,9 @@ def main():
     say(T["INSTALL_DANGO"])
     run("cp /usr/local/bin/dango /mnt/usr/local/bin/dango")
     run("chmod +x /mnt/usr/local/bin/dango")
+    run("mkdir -p /mnt/usr/lib/systemd/system-sleep")
+    run("cp /usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
+    run("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
 
     say(T["INSTALL_BRANDING"])
     with open("/mnt/etc/os-release", "w") as f:
