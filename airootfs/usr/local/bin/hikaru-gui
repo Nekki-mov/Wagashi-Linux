@@ -762,6 +762,10 @@ class KeyboardPage(BasePage):
         x11_map = {"es": "es", "uk": "gb", "fr": "fr", "de": "de", "it": "it", "pt-latin1": "pt", "jp106": "jp", "us": "us"}
         x11_layout = x11_map.get(layout, layout)
         subprocess.run(["setxkbmap", x11_layout], capture_output=True)
+        subprocess.run(["localectl", "set-x11-keymap", x11_layout], capture_output=True)
+        subprocess.run(["qdbus", "org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts.setLayout", x11_layout], capture_output=True)
+        subprocess.run(["localectl", "set-x11-keymap", x11_layout], capture_output=True)
+        subprocess.run(["qdbus", "org.kde.keyboard", "/Layouts", "org.kde.KeyboardLayouts.setLayout", x11_layout], capture_output=True)
         self.window.next_page()
 
 
