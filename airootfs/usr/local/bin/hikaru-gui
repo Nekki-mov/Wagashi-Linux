@@ -542,36 +542,107 @@ class NetworkPage(BasePage):
         T = window.T
         connection_title = {"en": "Connection.", "es": "Conexión.", "ja": "接続。"}.get(window.lang, "Connection.")
         self.add_title(connection_title)
-        self.add_subtitle(T["NETWORK_CHECKING"])
-        self.layout.addStretch()
 
-        self.status = QLabel("")
+        self.status = QLabel(T["NETWORK_CHECKING"])
         self.status.setObjectName("subtitle")
         self.status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.status)
+        self.layout.addSpacing(16)
 
+        self.wifi_widget = QWidget()
+        wifi_lay = QVBoxLayout(self.wifi_widget)
+        wifi_lay.setContentsMargins(0, 0, 0, 0)
+        wifi_lay.setSpacing(10)
+
+        self.wifi_networks_label = QLabel(T["NETWORK_WIFI_NETWORKS"])
+        self.wifi_networks_label.setObjectName("section")
+        wifi_lay.addWidget(self.wifi_networks_label)
+
+        self.wifi_list = QListWidget()
+        self.wifi_list.setFixedHeight(150)
+        wifi_lay.addWidget(self.wifi_list)
+
+        self.wifi_password = QLineEdit()
+        self.wifi_password.setEchoMode(QLineEdit.EchoMode.Password)
+        self.wifi_password.setPlaceholderText(T["NETWORK_WIFI_PASSWORD"])
+        wifi_lay.addWidget(self.wifi_password)
+
+        btn_row = QHBoxLayout()
+        self.scan_btn = QPushButton(T["NETWORK_WIFI_SCAN"])
+        self.scan_btn.setObjectName("secondary")
+        self.scan_btn.clicked.connect(self._scan_wifi)
+        btn_row.addWidget(self.scan_btn)
+
+        self.connect_btn = QPushButton(T["NETWORK_WIFI_CONNECT"])
+        self.connect_btn.setObjectName("primary")
+        self.connect_btn.clicked.connect(self._connect_wifi)
+        btn_row.addWidget(self.connect_btn)
+        wifi_lay.addLayout(btn_row)
+
+        self.wifi_error = QLabel("")
+        self.wifi_error.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.wifi_error.setStyleSheet(f"color: {COLORS['error']}; font-size: 12px;")
+        wifi_lay.addWidget(self.wifi_error)
+
+        self.wifi_widget.hide()
+        self.layout.addWidget(self.wifi_widget)
         self.layout.addStretch()
         self.add_nav()
         QTimer.singleShot(600, self.check)
 
     def check(self):
         T = self.window.T
-        result = subprocess.run("ping -c 1 -W 1 1.1.1.1", shell=True, capture_output=True)
+        result = subprocess.run("ping -c 1 -W 2 1.1.1.1", shell=True, capture_output=True)
         if result.returncode == 0:
             self.status.setText(f"✦ {T['NETWORK_OK']}")
-            if EDITION == "nayuki":
-                self.status.setStyleSheet(
-                    f"color: {COLORS['accent_dark']};"
-                    f"background: {COLORS['surface']};"
-                    f"font-size: 15px; font-weight: 600;"
-                    f"padding: 6px 18px; border-radius: 8px;"
-                )
-            else:
-                self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent; font-size: 14px;")
+            self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent; font-size: 14px;")
+            self.wifi_widget.hide()
         else:
             self.status.setText(T["NETWORK_FAIL"])
             self.status.setStyleSheet(f"color: {COLORS['error']}; background: transparent; font-size: 14px;")
+            self._scan_wifi()
 
+    def _scan_wifi(self):
+        T = self.window.T
+        self.wifi_error.setText(T["NETWORK_WIFI_SCANNING"])
+        self.wifi_list.clear()
+        result = subprocess.run("nmcli -t -f SSID dev wifi list", shell=True, capture_output=True, text=True)
+        networks = []
+        for line in result.stdout.strip().split("\n"):
+            ssid = line.strip()
+            if ssid and ssid not in networks:
+                networks.append(ssid)
+                self.wifi_list.addItem(ssid)
+        self.wifi_error.setText("")
+        if networks:
+            self.wifi_widget.show()
+        else:
+            self.wifi_error.setText(T["NETWORK_WIFI_NONE"])
+            self.wifi_widget.show()
+
+    def _connect_wifi(self):
+        T = self.window.T
+        selected = self.wifi_list.currentItem()
+        if not selected:
+            return
+        ssid = selected.text()
+        password = self.wifi_password.text()
+        self.connect_btn.setEnabled(False)
+        self.connect_btn.setText(T["NETWORK_WIFI_SCANNING"])
+        self.wifi_error.setText("")
+        if password:
+            cmd = ["nmcli", "dev", "wifi", "connect", ssid, "password", password]
+        else:
+            cmd = ["nmcli", "dev", "wifi", "connect", ssid]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        self.connect_btn.setText(T["NETWORK_WIFI_CONNECT"])
+        self.connect_btn.setEnabled(True)
+        if result.returncode == 0:
+            self.wifi_widget.hide()
+            self.status.setText(f"✦ {T['NETWORK_WIFI_CONNECTED']}")
+            self.status.setStyleSheet(f"color: {COLORS['accent']}; background: transparent; font-size: 14px;")
+        else:
+            self.wifi_error.setText(T["NETWORK_WIFI_CONNECT_FAIL"])
 
 class UserPage(BasePage):
     def __init__(self, window):
