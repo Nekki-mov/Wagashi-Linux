@@ -439,13 +439,13 @@ def main():
         "base linux-zen linux-firmware sudo networkmanager grub efibootmgr "
         "zsh nano git curl wget htop unzip tar man-db "
         "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
-        "mesa noto-fonts noto-fonts-emoji ttf-liberation "
+        "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
         "xorg-server xorg-xwayland "
         "plasma-desktop plasma-pa plasma-nm plasma-firewall plasma-systemmonitor "
         "sddm sddm-kcm discover kscreen powerdevil bluedevil kwallet-pam "
         "breeze breeze-gtk kde-gtk-config "
         "dolphin konsole "
-        "python-pyqt6 plymouth mochi"
+        "python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils"
     )
     extra_official, extra_aur = purpose_packages(purpose)
     gpu_official, gpu_aur = _host_gpu_packages()

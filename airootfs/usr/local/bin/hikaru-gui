@@ -1081,7 +1081,7 @@ class InstallWorker(QThread):
             "plasma-desktop plasma-pa plasma-nm plasma-firewall plasma-systemmonitor "
             "sddm sddm-kcm discover kscreen powerdevil bluedevil kwallet-pam "
             "breeze breeze-gtk kde-gtk-config "
-            "dolphin konsole python-pyqt6 plymouth mochi"
+            "dolphin konsole python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils"
         )
         extra_official, extra_aur = purpose_packages(d.get("purpose", "everyday"))
         gpu_official, gpu_aur = _host_gpu_packages()
