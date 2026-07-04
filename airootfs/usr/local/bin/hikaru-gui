@@ -1079,11 +1079,19 @@ class InstallWorker(QThread):
 
     def run_cmd(self, cmd, check=True):
         self.log_line.emit(f"$ {cmd}")
+        with open("/tmp/hikaru-install.log", "a") as logf:
+            logf.write(f"$ {cmd}\n")
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         for line in result.stdout.strip().split("\n"):
-            if line: self.log_line.emit(line)
+            if line:
+                self.log_line.emit(line)
+                with open("/tmp/hikaru-install.log", "a") as logf:
+                    logf.write(line + "\n")
         for line in result.stderr.strip().split("\n"):
-            if line: self.log_line.emit(f"[err] {line}")
+            if line:
+                self.log_line.emit(f"[err] {line}")
+                with open("/tmp/hikaru-install.log", "a") as logf:
+                    logf.write(f"[err] {line}\n")
         return result
 
     def write_file(self, path, content):
