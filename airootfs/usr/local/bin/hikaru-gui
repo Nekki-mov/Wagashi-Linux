@@ -1299,8 +1299,7 @@ class InstallWorker(QThread):
         self.run_cmd("cp /usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
         self.run_cmd("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
         self.run_cmd("mkdir -p /mnt/usr/lib/firmware/brcm")
-        self.run_cmd("cp /usr/share/wagashi/firmware/brcm/brcmfmac43602-pcie.bin /mnt/usr/lib/firmware/brcm/brcmfmac43602-pcie.bin")
-        self.run_cmd("cp '/usr/share/wagashi/firmware/brcm/brcmfmac43602-pcie.Apple Inc.-MacBookPro12,1.bin' '/mnt/usr/lib/firmware/brcm/brcmfmac43602-pcie.Apple Inc.-MacBookPro12,1.bin'")
+        self.run_cmd("cp -r /usr/share/wagashi/firmware/brcm/. /mnt/usr/lib/firmware/brcm/")
 
         self.status(T["INSTALL_SERVICES"], 94)
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")
