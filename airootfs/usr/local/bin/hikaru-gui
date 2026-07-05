@@ -238,11 +238,11 @@ def purpose_packages(purpose):
     """Returns (official_pkgs_str, aur_pkgs_str)"""
     always_official = [
         "htop", "btop", "gparted", "keepassxc", "okular", "ark", "spectacle",
-        "cups", "system-config-printer", "wine", "winetricks",
+        "cups", "system-config-printer", "wine", "winetricks", "firefox",
     ]
     always_aur = ["proton-ge-custom-bin"]
 
-    everyday_official = ["firefox", "libreoffice-fresh", "thunderbird", "vlc", "gimp", "gwenview"]
+    everyday_official = ["libreoffice-fresh", "thunderbird", "vlc", "gimp", "gwenview"]
     everyday_aur = []
 
     creative_official = [
