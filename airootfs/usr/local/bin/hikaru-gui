@@ -1161,13 +1161,13 @@ class InstallWorker(QThread):
         base = (
             "base linux-zen linux-firmware sudo networkmanager grub efibootmgr "
             "zsh nano git curl wget htop unzip tar man-db "
-            "pipewire pipewire-pulse wireplumber bluez bluez-utils cups "
+            "pipewire pipewire-pulse wireplumber bluez bluez-utils cups iwd power-profiles-daemon "
             "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
             "xorg-server xorg-xwayland "
             "plasma-desktop plasma-pa plasma-nm plasma-firewall plasma-systemmonitor "
             "sddm sddm-kcm discover kscreen powerdevil bluedevil kwallet-pam "
             "breeze breeze-gtk kde-gtk-config "
-            "dolphin konsole python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db"
+            "dolphin konsole python-pyqt6 plymouth fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db"
         )
         extra_official, extra_aur = purpose_packages(d.get("purpose", "everyday"))
         gpu_official, gpu_aur = _host_gpu_packages()
@@ -1221,14 +1221,15 @@ class InstallWorker(QThread):
         self.run_cmd(f"arch-chroot /mnt chmod 775 /usr/share/sddm/themes/wagashi/backgrounds")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
+        self.status(T.get("INSTALL_AUR", "Setting up a few extra things..."), 84)
+        self.run_cmd("arch-chroot /mnt pacman -S --noconfirm --needed git base-devel")
+        self.run_cmd(
+            f"arch-chroot /mnt su {username} -c "
+            f"\"git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && "
+            f"cd /tmp/yay-bin && makepkg -si --noconfirm\""
+        )
+        self.run_cmd("arch-chroot /mnt pacman -S --noconfirm")
         if extra_aur:
-            self.status(T.get("INSTALL_AUR", "Setting up a few extra things..."), 84)
-            self.run_cmd("arch-chroot /mnt pacman -S --noconfirm --needed git base-devel")
-            self.run_cmd(
-                f"arch-chroot /mnt su {username} -c "
-                f"\"git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && "
-                f"cd /tmp/yay-bin && makepkg -si --noconfirm\""
-            )
             self.run_cmd(
                 f"arch-chroot /mnt su {username} -c "
                 f"\"yay -S --noconfirm --needed {extra_aur}\""
@@ -1236,6 +1237,10 @@ class InstallWorker(QThread):
 
         self.status(T["INSTALL_BOOTLOADER"], 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
+        self.run_cmd("mkdir -p /mnt/etc/NetworkManager/conf.d")
+        self.write_file("/mnt/etc/NetworkManager/conf.d/wifi_backend.conf", "[device]\nwifi.backend=iwd\n")
+        self.run_cmd("mkdir -p /mnt/boot/efi/EFI/BOOT")
+        self.run_cmd("cp /mnt/boot/efi/EFI/Wagashi/grubx64.efi /mnt/boot/efi/EFI/BOOT/BOOTX64.EFI")
         self.run_cmd("mkdir -p /mnt/boot/grub/themes/wagashi")
         self.run_cmd("cp -r /usr/share/grub/themes/wagashi/. /mnt/boot/grub/themes/wagashi/")
         self.write_file("/mnt/etc/default/grub",
@@ -1306,11 +1311,12 @@ class InstallWorker(QThread):
         self.run_cmd("mkdir -p /mnt/usr/lib/systemd/system-sleep")
         self.run_cmd("cp /usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
         self.run_cmd("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
-        self.run_cmd("mkdir -p /mnt/usr/lib/firmware/brcm")
-        self.run_cmd("cp -r /usr/share/wagashi/firmware/brcm/. /mnt/usr/lib/firmware/brcm/")
 
         self.status(T["INSTALL_SERVICES"], 94)
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")
+        self.run_cmd("arch-chroot /mnt systemctl enable power-profiles-daemon")
+        self.run_cmd("arch-chroot /mnt systemctl enable iwd")
+        self.run_cmd("arch-chroot /mnt systemctl mask wpa_supplicant")
         self.run_cmd("arch-chroot /mnt systemctl enable sddm")
         self.run_cmd("arch-chroot /mnt systemctl enable bluetooth")
         self.run_cmd("arch-chroot /mnt systemctl enable cups")
