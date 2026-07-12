@@ -1226,17 +1226,17 @@ class InstallWorker(QThread):
         self.status(T.get("INSTALL_AUR", "Setting up a few extra things..."), 84)
 
         self.run_cmd(
-    "arch-chroot /mnt pacman -S --noconfirm --needed yay-bin mochi"
-)
+            "arch-chroot /mnt pacman -S --noconfirm --needed yay-bin mochi"
+        )
 
-self.run_cmd("arch-chroot /mnt test -x /usr/bin/yay")
-self.run_cmd("arch-chroot /mnt test -x /usr/local/bin/mochi")
+        self.run_cmd("arch-chroot /mnt test -x /usr/bin/yay")
+        self.run_cmd("arch-chroot /mnt test -x /usr/local/bin/mochi")
 
-if extra_aur:
-    self.run_cmd(
-        f"arch-chroot /mnt su {username} -c "
-        f"\"yay -S --noconfirm --needed {extra_aur}\""
-    )
+        if extra_aur:
+            self.run_cmd(
+                f"arch-chroot /mnt su {username} -c "
+                f"\"yay -S --noconfirm --needed {extra_aur}\""
+            )
 
         self.status(T["INSTALL_BOOTLOADER"], 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
