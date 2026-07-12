@@ -1,3 +1,6 @@
 # Build artifacts del paquete local WindowMaker
 windowmaker/src/
 windowmaker/pkg/
+
+__pycache__/
+*.py[cod]
