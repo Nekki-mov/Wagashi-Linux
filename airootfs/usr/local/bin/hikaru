@@ -3,6 +3,7 @@
 # "Light of the sky."
 
 import subprocess, sys, os, getpass, time, re as _re
+from pathlib import Path
 from hikaru_strings import STRINGS
 
 # ── Language selection ────────────────────────────────────────────────────────
@@ -198,6 +199,105 @@ def purpose_packages(purpose):
     if purpose in ("gaming", "gaming_creative", "everything"):
         base += ["steam", "lutris", "wine", "winetricks", "gamemode"]
     return " ".join(base)
+
+
+def detect_ram_gib():
+    """Return installed RAM rounded up to whole GiB."""
+    with open("/proc/meminfo", encoding="utf-8") as meminfo:
+        match = _re.search(
+            r"^MemTotal:\s+(\d+)\s+kB$",
+            meminfo.read(),
+            _re.MULTILINE,
+        )
+
+    if match is None:
+        raise RuntimeError("Could not detect installed RAM")
+
+    kib_per_gib = 1024 * 1024
+    ram_kib = int(match.group(1))
+    return max(1, (ram_kib + kib_per_gib - 1) // kib_per_gib)
+
+
+def recommended_swap_gib(ram_gib):
+    """Choose emergency swap size; this is not intended for hibernation."""
+    if ram_gib < 4:
+        return 4
+    if ram_gib <= 8:
+        return ram_gib
+    return 8
+
+
+def setup_swap():
+    """Create and configure the installed system's swapfile."""
+    swapfile = "/mnt/swapfile"
+    fstab = Path("/mnt/etc/fstab")
+    sysctl_file = Path("/mnt/etc/sysctl.d/99-wagashi-memory.conf")
+
+    try:
+        ram_gib = detect_ram_gib()
+    except (OSError, RuntimeError, ValueError) as error:
+        say(
+            "RAM detection failed; "
+            f"using an 8 GiB swapfile. ({error})"
+        )
+        ram_gib = 8
+
+    swap_gib = recommended_swap_gib(ram_gib)
+
+    say(
+        f"Creating {swap_gib} GiB of swap "
+        f"for {ram_gib} GiB of RAM..."
+    )
+
+    result = run(
+        f"fallocate -l {swap_gib}G {swapfile}",
+        check=False,
+    )
+
+    if result.returncode != 0:
+        say("fallocate did not work. Trying a slower fallback...")
+        result = run(
+            f"dd if=/dev/zero of={swapfile} "
+            f"bs=1M count={swap_gib * 1024} status=none",
+            check=False,
+        )
+
+    if result.returncode != 0:
+        say("I couldn't create the swapfile. Installation will continue.")
+        return
+
+    for command in (
+        f"chmod 600 {swapfile}",
+        f"mkswap {swapfile}",
+    ):
+        result = run(command, check=False)
+
+        if result.returncode != 0:
+            say(
+                "I couldn't finish configuring swap. "
+                "Installation will continue."
+            )
+            return
+
+    fstab_content = fstab.read_text(encoding="utf-8")
+
+    if not _re.search(
+        r"^/swapfile\s+none\s+swap\s+",
+        fstab_content,
+        _re.MULTILINE,
+    ):
+        with fstab.open("a", encoding="utf-8") as file:
+            file.write("/swapfile none swap defaults 0 0\n")
+
+    sysctl_file.parent.mkdir(parents=True, exist_ok=True)
+    sysctl_file.write_text(
+        "vm.swappiness=10\n"
+        "vm.vfs_cache_pressure=50\n",
+        encoding="utf-8",
+    )
+
+    say("Swap and memory settings are ready.")
+
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
@@ -397,13 +497,16 @@ def main():
         "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation "
         "xorg-server xorg-xinit xorg-xrandr "
         "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
-        "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs gvfs"
+        "python-pyqt6 plymouth sakura pcmanfm-qt xdg-user-dirs gvfs "
+        "yay-bin mochi iwd power-profiles-daemon "
     )
     extra_pkgs = purpose_packages(purpose)
     run(f"pacstrap /mnt {base_pkgs} {extra_pkgs}".strip())
+    run("cp /etc/pacman.conf /mnt/etc/pacman.conf")
 
     say(T["INSTALL_CONFIG"])
     run("genfstab -U /mnt >> /mnt/etc/fstab")
+    setup_swap()
     run(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
     run("arch-chroot /mnt hwclock --systohc")
     run(f"echo '{hostname}' > /mnt/etc/hostname")
@@ -428,6 +531,10 @@ def main():
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
     run(f"echo 'root:{password}' | arch-chroot /mnt chpasswd")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
+
+    say("Checking Wagashi's package tools...")
+    run("arch-chroot /mnt test -x /usr/bin/yay")
+    run("arch-chroot /mnt test -x /usr/local/bin/mochi")
 
     # wagashi-firstrun autostart — eliminado de aquí, se escribe después del chown
 
@@ -455,6 +562,11 @@ def main():
 
     say(T["INSTALL_BOOTLOADER"])
     run("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
+    run("mkdir -p /mnt/boot/efi/EFI/BOOT")
+    run(
+        "cp /mnt/boot/efi/EFI/Wagashi/grubx64.efi "
+        "/mnt/boot/efi/EFI/BOOT/BOOTX64.EFI"
+    )
     run("mkdir -p /mnt/boot/grub/themes/wagashi")
     run("cp -r /usr/share/grub/themes/wagashi/. /mnt/boot/grub/themes/wagashi/")
     with open("/mnt/etc/default/grub", "w") as f:
@@ -488,7 +600,7 @@ def main():
     with open("/mnt/etc/os-release", "w") as f:
         f.write('NAME="Wagashi Linux"\nPRETTY_NAME="Wagashi Linux - Nayuki (LXQt)"\n')
         f.write('ID=wagashi\nID_LIKE=arch\nBUILD_ID=rolling\nANSI_COLOR="1;35"\n')
-        f.write('HOME_URL="https://wagashi.rednek.org"\nLOGO=wagashi\n')
+        f.write('HOME_URL="https://wagashi.neklair.es"\nLOGO=wagashi\n')
     with open("/mnt/etc/motd", "w") as f:
         f.write('Welcome to Wagashi Linux — Nayuki (LXQt).\nYour computer, always yours.\n')
 
@@ -515,7 +627,23 @@ def main():
         say(T["INSTALL_VM_DETECTED"].format(virt=vm_check.stdout.strip()))
 
     say(T["INSTALL_SERVICES"])
-    run("arch-chroot /mnt systemctl enable NetworkManager lightdm bluetooth cups")
+
+    networkmanager_dir = Path("/mnt/etc/NetworkManager/conf.d")
+    networkmanager_dir.mkdir(parents=True, exist_ok=True)
+
+    (networkmanager_dir / "wifi_backend.conf").write_text(
+        "[device]\n"
+        "wifi.backend=iwd\n",
+        encoding="utf-8",
+    )
+
+    run("arch-chroot /mnt systemctl enable NetworkManager")
+    run("arch-chroot /mnt systemctl enable power-profiles-daemon")
+    run("arch-chroot /mnt systemctl enable iwd")
+    run("arch-chroot /mnt systemctl mask wpa_supplicant")
+    run("arch-chroot /mnt systemctl enable lightdm")
+    run("arch-chroot /mnt systemctl enable bluetooth")
+    run("arch-chroot /mnt systemctl enable cups")
     run("arch-chroot /mnt systemctl --global enable gvfs-daemon", check=False)
 
     if enable_firewall:

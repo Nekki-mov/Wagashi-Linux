@@ -1040,6 +1040,105 @@ class InstallWorker(QThread):
         except Exception as e:
             self.log_line.emit(f"[err] write_file {path}: {e}")
 
+    @staticmethod
+    def detect_ram_gib():
+        """Return installed RAM rounded up to whole GiB."""
+        with open("/proc/meminfo", encoding="utf-8") as meminfo:
+            match = _re.search(
+                r"^MemTotal:\s+(\d+)\s+kB$",
+                meminfo.read(),
+                _re.MULTILINE,
+            )
+
+        if match is None:
+            raise RuntimeError("Could not detect installed RAM")
+
+        kib_per_gib = 1024 * 1024
+        ram_kib = int(match.group(1))
+        return max(1, (ram_kib + kib_per_gib - 1) // kib_per_gib)
+
+    @staticmethod
+    def recommended_swap_gib(ram_gib):
+        """Choose emergency swap size; this is not intended for hibernation."""
+        if ram_gib < 4:
+            return 4
+        if ram_gib <= 8:
+            return ram_gib
+        return 8
+
+    def setup_swap(self):
+        """Create and configure the installed system's swapfile."""
+        swapfile = "/mnt/swapfile"
+        fstab = "/mnt/etc/fstab"
+        sysctl_file = "/mnt/etc/sysctl.d/99-wagashi-memory.conf"
+
+        try:
+            ram_gib = self.detect_ram_gib()
+        except (OSError, RuntimeError, ValueError) as error:
+            self.log_line.emit(
+                f"[err] RAM detection failed; using 8 GiB: {error}"
+            )
+            ram_gib = 8
+
+        swap_gib = self.recommended_swap_gib(ram_gib)
+
+        self.log_line.emit(
+            f"Creating {swap_gib} GiB of swap for {ram_gib} GiB of RAM..."
+        )
+
+        result = self.run_cmd(
+            f"fallocate -l {swap_gib}G {swapfile}",
+            check=False,
+        )
+
+        if result.returncode != 0:
+            self.log_line.emit(
+                "fallocate failed; retrying with dd..."
+            )
+
+            result = self.run_cmd(
+                f"dd if=/dev/zero of={swapfile} "
+                f"bs=1M count={swap_gib * 1024} status=none",
+                check=False,
+            )
+
+        if result.returncode != 0:
+            self.log_line.emit(
+                "[err] Could not create swap; installation will continue."
+            )
+            return
+
+        for command in (
+            f"chmod 600 {swapfile}",
+            f"mkswap {swapfile}",
+        ):
+            result = self.run_cmd(command, check=False)
+
+            if result.returncode != 0:
+                self.log_line.emit(
+                    "[err] Could not finish configuring swap."
+                )
+                return
+
+        with open(fstab, encoding="utf-8") as file:
+            fstab_content = file.read()
+
+        if not _re.search(
+            r"^/swapfile\s+none\s+swap\s+",
+            fstab_content,
+            _re.MULTILINE,
+        ):
+            with open(fstab, "a", encoding="utf-8") as file:
+                file.write("/swapfile none swap defaults 0 0\n")
+
+        self.write_file(
+            sysctl_file,
+            "vm.swappiness=10\n"
+            "vm.vfs_cache_pressure=50\n",
+        )
+
+        self.log_line.emit("Swap and memory settings are ready.")
+
     def status(self, msg, pct):
         self.status_changed.emit(msg, pct)
         self.log_line.emit(f"── {msg}")
@@ -1103,7 +1202,8 @@ class InstallWorker(QThread):
             "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
             "xorg-server xorg-xinit xorg-xrandr "
             "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
-            "python-pyqt6 plymouth yay-bin mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db lximage-qt screengrab sakura pcmanfm-qt xdg-user-dirs gvfs"
+            "python-pyqt6 plymouth yay-bin mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db lximage-qt screengrab sakura pcmanfm-qt xdg-user-dirs gvfs "
+            "iwd power-profiles-daemon "
         )
         extra_official, extra_aur = purpose_packages(d.get("purpose", "everyday"))
         gpu_official, gpu_aur = _host_gpu_packages()
@@ -1112,9 +1212,11 @@ class InstallWorker(QThread):
         if gpu_aur:
             extra_aur = f"{extra_aur} {gpu_aur}".strip()
         self.run_cmd(f"pacstrap /mnt {base} {extra_official}".strip())
+        self.run_cmd("cp /etc/pacman.conf /mnt/etc/pacman.conf")
 
         self.status(T["INSTALL_CONFIG"], 70)
         self.run_cmd("genfstab -U /mnt >> /mnt/etc/fstab")
+        self.setup_swap()
         self.run_cmd(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
         self.run_cmd("arch-chroot /mnt hwclock --systohc")
         self.run_cmd(f"echo '{d['hostname']}' > /mnt/etc/hostname")
@@ -1138,8 +1240,42 @@ class InstallWorker(QThread):
         self.run_cmd(f"echo 'root:{d['password']}' | arch-chroot /mnt chpasswd")
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
+        self.log_line.emit("Checking Wagashi package tools...")
+        self.run_cmd("arch-chroot /mnt test -x /usr/bin/yay")
+        self.run_cmd("arch-chroot /mnt test -x /usr/local/bin/mochi")
+
+        if extra_aur:
+            self.log_line.emit("Installing AUR packages...")
+
+            temporary_sudoers = "/mnt/etc/sudoers.d/hikaru-aur"
+            self.run_cmd("mkdir -p /mnt/etc/sudoers.d")
+
+            self.write_file(
+                temporary_sudoers,
+                f"{username} ALL=(ALL:ALL) "
+                "NOPASSWD: /usr/bin/pacman\n",
+            )
+
+            self.run_cmd(f"chmod 440 {temporary_sudoers}")
+
+            try:
+                self.run_cmd(
+                    f"arch-chroot /mnt su {username} -c "
+                    f"\"yay -S --noconfirm --needed {extra_aur}\""
+                )
+            finally:
+                self.run_cmd(
+                    f"rm -f {temporary_sudoers}",
+                    check=False,
+                )
+
         self.status(T["INSTALL_BOOTLOADER"], 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
+        self.run_cmd("mkdir -p /mnt/boot/efi/EFI/BOOT")
+        self.run_cmd(
+            "cp /mnt/boot/efi/EFI/Wagashi/grubx64.efi "
+            "/mnt/boot/efi/EFI/BOOT/BOOTX64.EFI"
+        )
         self.run_cmd("mkdir -p /mnt/boot/grub/themes/wagashi")
         self.run_cmd("cp -r /usr/share/grub/themes/wagashi/. /mnt/boot/grub/themes/wagashi/")
         self.write_file("/mnt/etc/default/grub",
@@ -1217,7 +1353,20 @@ class InstallWorker(QThread):
         self.run_cmd("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
 
         self.status(T["INSTALL_SERVICES"], 94)
+
+        self.run_cmd("mkdir -p /mnt/etc/NetworkManager/conf.d")
+        self.write_file(
+            "/mnt/etc/NetworkManager/conf.d/wifi_backend.conf",
+            "[device]\n"
+            "wifi.backend=iwd\n",
+        )
+
         self.run_cmd("arch-chroot /mnt systemctl enable NetworkManager")
+        self.run_cmd(
+            "arch-chroot /mnt systemctl enable power-profiles-daemon"
+        )
+        self.run_cmd("arch-chroot /mnt systemctl enable iwd")
+        self.run_cmd("arch-chroot /mnt systemctl mask wpa_supplicant")
         self.run_cmd("arch-chroot /mnt systemctl enable lightdm")
         self.run_cmd("arch-chroot /mnt systemctl enable bluetooth")
         self.run_cmd("arch-chroot /mnt systemctl enable cups")
