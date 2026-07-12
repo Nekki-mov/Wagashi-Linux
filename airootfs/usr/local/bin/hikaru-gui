@@ -1158,7 +1158,7 @@ class InstallWorker(QThread):
             "plasma-desktop plasma-pa plasma-nm plasma-firewall plasma-systemmonitor "
             "sddm sddm-kcm kscreen powerdevil bluedevil kwallet-pam "
             "breeze breeze-gtk kde-gtk-config "
-            "dolphin konsole python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db"
+            "dolphin konsole python-pyqt6 plymouth yay-bin mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db"
         )
         extra_official, extra_aur = purpose_packages(d.get("purpose", "everyday"))
         gpu_official, gpu_aur = _host_gpu_packages()
@@ -1213,12 +1213,6 @@ class InstallWorker(QThread):
 
         if extra_aur:
             self.status(T.get("INSTALL_AUR", "Setting up a few extra things..."), 84)
-            self.run_cmd("arch-chroot /mnt pacman -S --noconfirm --needed git base-devel")
-            self.run_cmd(
-                f"arch-chroot /mnt su {username} -c "
-                f"\"git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && "
-                f"cd /tmp/yay-bin && makepkg -si --noconfirm\""
-            )
             self.run_cmd(
                 f"arch-chroot /mnt su {username} -c "
                 f"\"yay -S --noconfirm --needed {extra_aur}\""
