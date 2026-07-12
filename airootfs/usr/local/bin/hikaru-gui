@@ -1179,6 +1179,8 @@ class InstallWorker(QThread):
 
         self.status(T["INSTALL_CONFIG"], 70)
         self.run_cmd("genfstab -U /mnt >> /mnt/etc/fstab")
+        self.run_cmd("echo '\n[wagashi]\nSigLevel = Optional TrustAll\nServer = https://repo.neklair.es/x86_64' >> /mnt/etc/pacman.conf")
+        self.run_cmd("arch-chroot /mnt pacman -Sy --noconfirm mochi")
         self.run_cmd(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
         self.run_cmd("arch-chroot /mnt hwclock --systohc")
         self.run_cmd(f"echo '{d['hostname']}' > /mnt/etc/hostname")
@@ -1222,18 +1224,19 @@ class InstallWorker(QThread):
         self.run_cmd("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
         self.status(T.get("INSTALL_AUR", "Setting up a few extra things..."), 84)
-        self.run_cmd("arch-chroot /mnt pacman -S --noconfirm --needed git base-devel")
+
         self.run_cmd(
-            f"arch-chroot /mnt su {username} -c "
-            f"\"git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && "
-            f"cd /tmp/yay-bin && makepkg -si --noconfirm\""
-        )
-        self.run_cmd("arch-chroot /mnt pacman -S --noconfirm")
-        if extra_aur:
-            self.run_cmd(
-                f"arch-chroot /mnt su {username} -c "
-                f"\"yay -S --noconfirm --needed {extra_aur}\""
-            )
+    "arch-chroot /mnt pacman -S --noconfirm --needed yay-bin mochi"
+)
+
+self.run_cmd("arch-chroot /mnt test -x /usr/bin/yay")
+self.run_cmd("arch-chroot /mnt test -x /usr/local/bin/mochi")
+
+if extra_aur:
+    self.run_cmd(
+        f"arch-chroot /mnt su {username} -c "
+        f"\"yay -S --noconfirm --needed {extra_aur}\""
+    )
 
         self.status(T["INSTALL_BOOTLOADER"], 82)
         self.run_cmd("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
