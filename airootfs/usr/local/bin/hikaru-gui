@@ -1102,6 +1102,100 @@ class InstallWorker(QThread):
         except Exception as e:
             self.log_line.emit(f"[err] write_file {path}: {e}")
 
+    @staticmethod
+    def detect_ram_gib():
+        """Return installed RAM rounded up to whole GiB."""
+        with open("/proc/meminfo", encoding="utf-8") as meminfo:
+            match = _re.search(
+                r"^MemTotal:\s+(\d+)\s+kB$",
+                meminfo.read(),
+                _re.MULTILINE,
+            )
+
+        if match is None:
+            raise RuntimeError("Could not detect installed RAM")
+
+        kib_per_gib = 1024 * 1024
+        ram_kib = int(match.group(1))
+        return max(1, (ram_kib + kib_per_gib - 1) // kib_per_gib)
+
+    @staticmethod
+    def recommended_swap_gib(ram_gib):
+        """Choose emergency swap size; this is not intended for hibernation."""
+        if ram_gib < 4:
+            return 4
+        if ram_gib <= 8:
+            return ram_gib
+        return 8
+
+    def setup_swap(self):
+        """Create and configure the target system's swapfile."""
+        swapfile = "/mnt/swapfile"
+        fstab = "/mnt/etc/fstab"
+        sysctl_file = "/mnt/etc/sysctl.d/99-wagashi-memory.conf"
+
+        try:
+            ram_gib = self.detect_ram_gib()
+        except (OSError, RuntimeError, ValueError) as error:
+            self.log_line.emit(
+                f"[err] RAM detection failed; using an 8 GiB swapfile: {error}"
+            )
+            ram_gib = 8
+
+        swap_gib = self.recommended_swap_gib(ram_gib)
+        self.log_line.emit(
+            f"Configuring {swap_gib} GiB of swap for {ram_gib} GiB of RAM..."
+        )
+
+        create_result = self.run_cmd(
+            f"fallocate -l {swap_gib}G {swapfile}",
+            check=False,
+        )
+
+        if create_result.returncode != 0:
+            self.log_line.emit(
+                "fallocate failed; retrying swapfile creation with dd..."
+            )
+            create_result = self.run_cmd(
+                f"dd if=/dev/zero of={swapfile} "
+                f"bs=1M count={swap_gib * 1024} status=none",
+                check=False,
+            )
+
+        if create_result.returncode != 0:
+            self.log_line.emit(
+                "[err] Could not create the swapfile; installation will continue."
+            )
+            return
+
+        commands = (
+            f"chmod 600 {swapfile}",
+            f"mkswap {swapfile}",
+        )
+
+        for command in commands:
+            result = self.run_cmd(command, check=False)
+            if result.returncode != 0:
+                self.log_line.emit(
+                    "[err] Swap configuration failed; installation will continue."
+                )
+                return
+
+        with open(fstab, encoding="utf-8") as file:
+            fstab_content = file.read()
+
+        if not _re.search(r"^/swapfile\s+none\s+swap\s+", fstab_content, _re.MULTILINE):
+            with open(fstab, "a", encoding="utf-8") as file:
+                file.write("/swapfile none swap defaults 0 0\n")
+
+        self.write_file(
+            sysctl_file,
+            "vm.swappiness=10\n"
+            "vm.vfs_cache_pressure=50\n",
+        )
+
+        self.log_line.emit("Swapfile and memory settings are ready.")
+
     def status(self, msg, pct):
         self.status_changed.emit(msg, pct)
         self.log_line.emit(f"── {msg}")
@@ -1181,6 +1275,7 @@ class InstallWorker(QThread):
 
         self.status(T["INSTALL_CONFIG"], 70)
         self.run_cmd("genfstab -U /mnt >> /mnt/etc/fstab")
+        self.setup_swap()
         self.run_cmd(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
         self.run_cmd("arch-chroot /mnt hwclock --systohc")
         self.run_cmd(f"echo '{d['hostname']}' > /mnt/etc/hostname")
