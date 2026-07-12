@@ -1177,10 +1177,10 @@ class InstallWorker(QThread):
             extra_aur = f"{extra_aur} {gpu_aur}".strip()
         self.run_cmd(f"pacstrap /mnt {base} {extra_official}".strip())
 
+        self.run_cmd("cp /etc/pacman.conf /mnt/etc/pacman.conf")
+
         self.status(T["INSTALL_CONFIG"], 70)
         self.run_cmd("genfstab -U /mnt >> /mnt/etc/fstab")
-        self.run_cmd("echo '\n[wagashi]\nSigLevel = Optional TrustAll\nServer = https://repo.neklair.es/x86_64' >> /mnt/etc/pacman.conf")
-        self.run_cmd("arch-chroot /mnt pacman -Sy --noconfirm mochi")
         self.run_cmd(f"arch-chroot /mnt ln -sf /usr/share/zoneinfo/{timezone} /etc/localtime")
         self.run_cmd("arch-chroot /mnt hwclock --systohc")
         self.run_cmd(f"echo '{d['hostname']}' > /mnt/etc/hostname")
