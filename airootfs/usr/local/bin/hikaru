@@ -3,6 +3,7 @@
 # "Light of the sky."
 
 import subprocess, sys, os, getpass, time
+from pathlib import Path
 
 def clear():
     os.system("clear")
@@ -533,7 +534,8 @@ def main():
         "sddm sddm-kcm discover kscreen powerdevil bluedevil kwallet-pam "
         "breeze breeze-gtk kde-gtk-config "
         "dolphin konsole "
-        "python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db"
+        "python-pyqt6 plymouth yay-bin mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript "
+        "foomatic-db-engine foomatic-db iwd power-profiles-daemon "
     )
     extra_official, extra_aur = purpose_packages(purpose)
     gpu_official, gpu_aur = _host_gpu_packages()
@@ -542,6 +544,7 @@ def main():
     if gpu_aur:
         extra_aur = f"{extra_aur} {gpu_aur}".strip()
     run(f"pacstrap /mnt {base_pkgs} {extra_official}".strip())
+    run("cp /etc/pacman.conf /mnt/etc/pacman.conf")
 
     say("Configuring your system...")
     run("genfstab -U /mnt >> /mnt/etc/fstab")
@@ -574,6 +577,19 @@ def main():
     run("cp /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc /mnt/etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc")
     run("cp /etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh /mnt/etc/skel/.config/plasma-workspace/shutdown/sync-sddm-wallpaper.sh")
     run("cp /etc/skel/.config/kdeglobals /mnt/etc/skel/.config/kdeglobals")
+    run("cp /etc/skel/.config/kxkbrc /mnt/etc/skel/.config/kxkbrc")
+
+    sddm_dir = Path("/mnt/etc/sddm.conf.d")
+    sddm_dir.mkdir(parents=True, exist_ok=True)
+
+    (sddm_dir / "wagashi.conf").write_text(
+        "[Theme]\n"
+        "Current=breeze\n"
+        "\n"
+        "[Autologin]\n"
+        "Relogin=false\n",
+        encoding="utf-8",
+    )
     run(f"arch-chroot /mnt useradd -m -G wheel,sddm-bg -s /bin/zsh {username}")
     run(f"echo '{username}:{password}' | arch-chroot /mnt chpasswd")
     run(f"arch-chroot /mnt mkdir -p /usr/share/sddm/themes/wagashi/backgrounds")
@@ -581,21 +597,36 @@ def main():
     run(f"arch-chroot /mnt chmod 775 /usr/share/sddm/themes/wagashi/backgrounds")
     run("echo '%wheel ALL=(ALL:ALL) ALL' >> /mnt/etc/sudoers")
 
+    say("Checking Wagashi's package tools...")
+    run("arch-chroot /mnt test -x /usr/bin/yay")
+    run("arch-chroot /mnt test -x /usr/local/bin/mochi")
+
     if extra_aur:
-        say("Setting up a few extra things from the AUR. This takes a moment...")
-        run("arch-chroot /mnt pacman -S --noconfirm --needed git base-devel")
-        run(
-            f"arch-chroot /mnt su {username} -c "
-            f"\"git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin && "
-            f"cd /tmp/yay-bin && makepkg -si --noconfirm\""
+        say("Installing a few extra things from the AUR...")
+
+        temporary_sudoers = Path("/mnt/etc/sudoers.d/hikaru-aur")
+        temporary_sudoers.parent.mkdir(parents=True, exist_ok=True)
+        temporary_sudoers.write_text(
+            f"{username} ALL=(ALL:ALL) NOPASSWD: /usr/bin/pacman\n",
+            encoding="utf-8",
         )
-        run(
-            f"arch-chroot /mnt su {username} -c "
-            f"\"yay -S --noconfirm --needed {extra_aur}\""
-        )
+        temporary_sudoers.chmod(0o440)
+
+        try:
+            run(
+                f"arch-chroot /mnt su {username} -c "
+                f"\"yay -S --noconfirm --needed {extra_aur}\""
+            )
+        finally:
+            temporary_sudoers.unlink(missing_ok=True)
 
     say("Installing bootloader...")
     run("arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=Wagashi")
+    run("mkdir -p /mnt/boot/efi/EFI/BOOT")
+    run(
+        "cp /mnt/boot/efi/EFI/Wagashi/grubx64.efi "
+        "/mnt/boot/efi/EFI/BOOT/BOOTX64.EFI"
+    )
 
     run("mkdir -p /mnt/boot/grub/themes/wagashi")
     run("cp -r /usr/share/grub/themes/wagashi/. /mnt/boot/grub/themes/wagashi/")
@@ -626,6 +657,15 @@ def main():
     run("chmod +x /mnt/usr/local/bin/dango")
     run("cp /usr/local/bin/wagashi-firstrun /mnt/usr/local/bin/wagashi-firstrun")
     run("chmod +x /mnt/usr/local/bin/wagashi-firstrun")
+
+    for installer_file in ("hikaru", "hikaru-gui", "hikaru_strings.py"):
+        run(
+            f"cp /usr/local/bin/{installer_file} "
+            f"/mnt/usr/local/bin/{installer_file}"
+        )
+
+    run("chmod +x /mnt/usr/local/bin/hikaru")
+    run("chmod +x /mnt/usr/local/bin/hikaru-gui")
     run(f"mkdir -p /mnt/home/{username}/.config/autostart")
     with open(f"/mnt/home/{username}/.config/autostart/wagashi-firstrun.desktop", "w") as f:
         f.write(
@@ -639,19 +679,27 @@ def main():
     run("chmod +x /mnt/usr/lib/systemd/system-sleep/wagashi-broadcom-wifi-fix")
 
     say("Applying Wagashi branding...")
-    with open("/mnt/etc/os-release", "w") as f:
-        f.write('NAME="Wagashi Linux"\n')
-        f.write('PRETTY_NAME="Wagashi Linux"\n')
-        f.write('ID=wagashi\n')
-        f.write('ID_LIKE=arch\n')
-        f.write('BUILD_ID=rolling\n')
-        f.write('ANSI_COLOR="1;35"\n')
-        f.write('HOME_URL="https://wagashi.rednek.org"\n')
-        f.write('LOGO=wagashi\n')
 
-    with open("/mnt/etc/motd", "w") as f:
-        f.write('Welcome to Wagashi Linux.\n')
-        f.write('Your computer, always yours.\n')
+    Path("/mnt/etc/os-release").write_text(
+        'NAME="Wagashi Linux"\n'
+        'PRETTY_NAME="Wagashi Linux - Ayu (KDE)"\n'
+        'VERSION="1.0 (Natto)"\n'
+        'VERSION_ID="1.0"\n'
+        'VARIANT_ID=ayu\n'
+        'ID=wagashi\n'
+        'ID_LIKE=arch\n'
+        'BUILD_ID=rolling\n'
+        'ANSI_COLOR="1;35"\n'
+        'HOME_URL="https://wagashi.neklair.es"\n'
+        'LOGO=wagashi\n',
+        encoding="utf-8",
+    )
+
+    Path("/mnt/etc/motd").write_text(
+        "Welcome to Wagashi Linux — Ayu (KDE).\n"
+        "Your computer, always yours.\n",
+        encoding="utf-8",
+    )
 
     say("Installing Plymouth theme...")
     run("mkdir -p /mnt/usr/share/plymouth/themes/wagashi")
@@ -677,8 +725,25 @@ def main():
     if vm_check.stdout.strip() not in ("none", ""):
         say(f"Looks like you're in a virtual machine ({vm_check.stdout.strip()}). That's fine, just so you know.")
 
+    say("Configuring network services...")
+
+    networkmanager_dir = Path("/mnt/etc/NetworkManager/conf.d")
+    networkmanager_dir.mkdir(parents=True, exist_ok=True)
+
+    (networkmanager_dir / "wifi_backend.conf").write_text(
+        "[device]\n"
+        "wifi.backend=iwd\n",
+        encoding="utf-8",
+    )
+
     say("Enabling services...")
-    run("arch-chroot /mnt systemctl enable NetworkManager sddm bluetooth cups")
+    run("arch-chroot /mnt systemctl enable NetworkManager")
+    run("arch-chroot /mnt systemctl enable power-profiles-daemon")
+    run("arch-chroot /mnt systemctl enable iwd")
+    run("arch-chroot /mnt systemctl mask wpa_supplicant")
+    run("arch-chroot /mnt systemctl enable sddm")
+    run("arch-chroot /mnt systemctl enable bluetooth")
+    run("arch-chroot /mnt systemctl enable cups")
 
     if enable_firewall:
         run("pacstrap /mnt ufw", check=False)
