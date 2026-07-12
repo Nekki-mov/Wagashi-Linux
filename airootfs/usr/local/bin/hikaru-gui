@@ -1103,7 +1103,7 @@ class InstallWorker(QThread):
             "mesa noto-fonts noto-fonts-cjk noto-fonts-emoji ttf-liberation ttf-bitstream-vera "
             "xorg-server xorg-xinit xorg-xrandr "
             "lxqt lxqt-session openbox lightdm lightdm-gtk-greeter accountsservice "
-            "python-pyqt6 plymouth mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db lximage-qt screengrab sakura pcmanfm-qt xdg-user-dirs gvfs"
+            "python-pyqt6 plymouth yay-bin mochi fwupd alsa-utils v4l-utils sane libwacom xf86-input-wacom ghostscript foomatic-db-engine foomatic-db lximage-qt screengrab sakura pcmanfm-qt xdg-user-dirs gvfs"
         )
         extra_official, extra_aur = purpose_packages(d.get("purpose", "everyday"))
         gpu_official, gpu_aur = _host_gpu_packages()
